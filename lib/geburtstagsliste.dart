@@ -1,0 +1,219 @@
+/* =========================
+   Geburtstagsliste
+========================= */
+import 'package:BirthdayMarker/main.dart';
+import 'package:flutter/material.dart';
+
+class BirthdayListPage extends StatelessWidget {
+  final List<BirthdayEntry> entries;
+  final int Function(DateTime) nextAge;
+  final int Function(DateTime) daysUntil;
+  final VoidCallback onUpdate;
+
+  const BirthdayListPage({
+    super.key,
+    required this.entries,
+    required this.nextAge,
+    required this.daysUntil,
+    required this.onUpdate,
+  });
+
+  // -------------------
+  // Edit-Dialog für Person
+  // -------------------
+  void _editPerson(BuildContext context, BirthdayEntry? e) {
+    final entry = e ??
+        BirthdayEntry(
+            name: '', birthday: DateTime.now(), notificationTime: TimeOfDay.now());
+    final nameCtrl = TextEditingController(text: entry.name);
+    DateTime birthday = entry.birthday;
+    TimeOfDay time = entry.notificationTime;
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setD) => AlertDialog(
+          title: const Text('Edit Birthday'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: birthday,
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime(2100),
+                  );
+                  if (d != null) setD(() => birthday = d);
+                },
+                child: Text('${birthday.day}.${birthday.month}.${birthday.year}'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final t = await showTimePicker(
+                    context: context,
+                    initialTime: time,
+                  );
+                  if (t != null) setD(() => time = t);
+                },
+                child: Text(time.format(context)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                entry.name = nameCtrl.text;
+                entry.birthday = birthday;
+                entry.notificationTime = time;
+                onUpdate(); // Speichert den Eintrag
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // -------------------
+  // Popup mit Details
+  // -------------------
+  void _showDetails(BuildContext context, BirthdayEntry e) {
+    final age = nextAge(e.birthday);
+    final days = daysUntil(e.birthday);
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                e.name,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                Navigator.pop(context); // Popup schließen
+                _editPerson(context, e); // Edit-Dialog öffnen
+              },
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Birthday: ${e.birthday.day}.${e.birthday.month}.${e.birthday.year}'),
+            Text('Reminder: ${e.notificationTime.format(context)}'),
+            const SizedBox(height: 8),
+            Text(
+              days == 0
+                  ? "Today is the birthday!"
+                  : 'In $days Days (${age} years old)',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------
+  // Build
+  // -------------------
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Birthday List'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BirthdayCalendarPage(birthdayEntries: entries),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: entries.length,
+        itemBuilder: (context, i) {
+          final e = entries[i];
+          final d = daysUntil(e.birthday);
+
+          return Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: ListTile(
+              title: Text(e.name),
+              subtitle: Text(d == 0
+                  ? '🎉 Today ${nextAge(e.birthday)}'
+                  : 'In $d Days (${nextAge(e.birthday)})'),
+              trailing: GestureDetector(
+                onTap: () {
+                print("Invisible area pressed!");
+              _editPerson(context, e);
+          },
+            child: const SizedBox(
+            width: 24,
+            height: 24,
+  ),
+),
+              onTap: () => _showDetails(context, e),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _editPerson(context, null),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+// -------------------
+// Kalender-Seite
+// -------------------
+class BirthdayCalendarPage extends StatelessWidget {
+  final List<BirthdayEntry> birthdayEntries;
+
+  const BirthdayCalendarPage({super.key, required this.birthdayEntries});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Calendar'),
+      ),
+      body: Center(
+        child: Text('Calendar View for ${birthdayEntries.length} birthdays'),
+      ),
+    );
+  }
+}
