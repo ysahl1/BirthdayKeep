@@ -3,6 +3,7 @@
 ========================= */
 import 'package:BirthdayMarker/main.dart';
 import 'package:flutter/material.dart';
+import 'calendarWidget.dart';
 
 class BirthdayListPage extends StatelessWidget {
   final List<BirthdayEntry> entries;
@@ -21,6 +22,7 @@ class BirthdayListPage extends StatelessWidget {
   // -------------------
   // Edit-Dialog für Person
   // -------------------
+
   void _editPerson(BuildContext context, BirthdayEntry? e) {
     final entry = e ??
         BirthdayEntry(
@@ -141,6 +143,7 @@ class BirthdayListPage extends StatelessWidget {
   // -------------------
   // Build
   // -------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,7 +156,7 @@ class BirthdayListPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => BirthdayCalendarPage(birthdayEntries: entries),
+                  builder: (_) => BirthdayCalendarPage(birthdayEntries: entries, entries: entries),
                 ),
               );
             },
@@ -173,7 +176,7 @@ class BirthdayListPage extends StatelessWidget {
             child: ListTile(
               title: Text(e.name),
               subtitle: Text(d == 0
-                  ? '🎉 Today ${nextAge(e.birthday)}'
+                  ? 'Today ${nextAge(e.birthday)}'
                   : 'In $d Days (${nextAge(e.birthday)})'),
               trailing: GestureDetector(
                 onTap: () {
@@ -191,19 +194,119 @@ class BirthdayListPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _editPerson(context, null),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.search),
+        onPressed: () {
+         showSearch(
+           context: context,
+            delegate: BirthdaySearchDelegate(
+             entries: entries,
+             onSelect: (e) => _showDetails(context, e),
       ),
+    );
+  },
+),    
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
+
+// -------------------
+// Suchfunktion
+// -------------------
+class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
+  final List<BirthdayEntry> entries;
+  final void Function(BirthdayEntry) onSelect;
+
+  BirthdaySearchDelegate({
+    required this.entries,
+    required this.onSelect,
+  });
+
+  @override
+  String get searchFieldLabel => 'Search Name';
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () => query = '',
+        ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final results = entries
+        .where(
+          (e) => e.name.toLowerCase().contains(query.toLowerCase()),
+        )
+        .toList();
+
+    return _buildList(context, results);
+  }
+
+  @override
+Widget buildSuggestions(BuildContext context) {
+  if (query.isEmpty) {
+    return const Center(
+      child: Text(
+        ' ',
+        style: TextStyle(color: Colors.grey),
+      ),
+    );
+  }
+
+  final suggestions = entries
+      .where(
+        (e) => e.name.toLowerCase().contains(query.toLowerCase()),
+      )
+      .toList();
+
+  return _buildList(context, suggestions);
+}
+
+  Widget _buildList(BuildContext context, List<BirthdayEntry> list) {
+    if (list.isEmpty) {
+      return const Center(child: Text('No results'));
+    }
+
+    return ListView.builder(
+      itemCount: list.length,
+      itemBuilder: (context, i) {
+        final e = list[i];
+        return ListTile(
+          title: Text(e.name),
+          subtitle: Text(
+            '${e.birthday.day}.${e.birthday.month}.${e.birthday.year}',
+          ),
+          onTap: () {
+            close(context, e);
+            onSelect(e); // 🔥 öffnet Detail-Popup
+          },
+        );
+      },
+    );
+  }
+}
+
 // -------------------
 // Kalender-Seite
 // -------------------
 class BirthdayCalendarPage extends StatelessWidget {
   final List<BirthdayEntry> birthdayEntries;
-
-  const BirthdayCalendarPage({super.key, required this.birthdayEntries});
+  
+  final dynamic entries;
+  const BirthdayCalendarPage({super.key, required this.entries, required this.birthdayEntries});
 
   @override
   Widget build(BuildContext context) {
@@ -211,8 +314,38 @@ class BirthdayCalendarPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Calendar'),
       ),
-      body: Center(
-        child: Text('Calendar View for ${birthdayEntries.length} birthdays'),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _cardCalendar(context, ' ', birthdayEntries),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+    
+  Widget _cardCalendar(BuildContext context, String title, List<BirthdayEntry> entries) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 350, // Höhe des Kalenders, kann angepasst werden
+              child: BirthdayCalendar(
+                entries: entries,
+                shortDate: (d) {
+                  const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+                  return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year % 100} ${weekdays[d.weekday - 1]}';
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

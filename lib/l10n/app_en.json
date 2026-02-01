@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "BirthdayMarker",
+
+  "design": "Design",
+  "system": "System",
+  "light": "Light",
+  "dark": "Dark",
+
+  "language": "Language",
+  "german": "German",
+  "english": "English"
+}

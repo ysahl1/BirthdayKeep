@@ -1,10 +1,11 @@
 /* =========================
    Home Page
 ========================= */
-import 'package:BirthdayMarker/einstellungen.dart';
-import 'package:BirthdayMarker/geburtstagsliste.dart';
+import 'package:BirthdayMarker/settings.dart';
+import 'package:BirthdayMarker/list.dart';
 import 'package:BirthdayMarker/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BirthdayHomePage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
@@ -19,6 +20,7 @@ class BirthdayHomePage extends StatefulWidget {
   @override
   State<BirthdayHomePage> createState() => _BirthdayHomePageState();
 }
+
 class _BirthdayHomePageState extends State<BirthdayHomePage> {
   final List<BirthdayEntry> entries = [];
 
@@ -34,6 +36,44 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
     DateTime next = DateTime(now.year, birthday.month, birthday.day);
     if (next.isBefore(now)) next = DateTime(now.year + 1, birthday.month, birthday.day);
     return next.difference(now).inDays;
+  }
+
+  Future<bool> _onWillPop() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.exit_to_app,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            const Text('Exit BirthdayMarker'),
+          ],
+        ),
+        content: const Text('Are you sure you want to close the application?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldExit == true) {
+      SystemNavigator.pop(); // Schließt die App
+    }
+    
+    return false; // Verhindert das automatische Zurückgehen
   }
 
   void _addEntryDialog() {
@@ -105,50 +145,58 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addEntryDialog,
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.list),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BirthdayListPage(
-                      entries: entries,
-                      nextAge: nextAge,
-                      daysUntil: daysUntil,
-                      onUpdate: () => setState(() {}),
-                    ),
-                  ),
-                );
-              },
-            ),
-                  IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SettingsPage(
-                            themeNotifier: widget.themeNotifier,
-                            localeNotifier: widget.localeNotifier,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          await _onWillPop();
         }
-      }
+      },
+      child: Scaffold(
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: FloatingActionButton(
+          onPressed: _addEntryDialog,
+          child: const Icon(Icons.add),
+        ),
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.list),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BirthdayListPage(
+                        entries: entries,
+                        nextAge: nextAge,
+                        daysUntil: daysUntil,
+                        onUpdate: () => setState(() {}),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SettingsPage(
+                        themeNotifier: widget.themeNotifier,
+                        localeNotifier: widget.localeNotifier,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

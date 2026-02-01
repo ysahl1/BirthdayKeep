@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:BirthdayMarker/datenschutzEinstellungen.dart';
-import 'package:BirthdayMarker/design.dart';
+import 'package:BirthdayMarker/privacySettings.dart';
+import 'package:BirthdayMarker/designSettings.dart';
 
-class SettingsPage extends StatelessWidget {
+
+class SettingsPage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
   final ValueNotifier<Locale> localeNotifier;
 
@@ -12,6 +13,11 @@ class SettingsPage extends StatelessWidget {
     required this.localeNotifier,
   });
 
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,35 +29,28 @@ class SettingsPage extends StatelessWidget {
             context,
             Icons.security,
             'Privacy & Security',
-            const PrivacySecurityPage(),
+            const BirthdayPrivacySettings(),
           ),
           _card(
             context,
             Icons.notifications,
             'Notification',
-            const PlaceholderPage(title: 'Notification') as Widget,
+            const PlaceholderPage(title: 'Notification'),
           ),
           _card(
             context,
             Icons.palette,
             'Design',
-            ThemeSettingsPage(
-              themeNotifier: themeNotifier,
-            ),
-          ),
-          _card(
-            context,
-            Icons.language,
-            'Language',
-            LanguageSettingsPage(
-              localeNotifier: localeNotifier,
+            BirthdayDesignSettings(
+              themeNotifier: widget.themeNotifier,
+              localeNotifier: widget.localeNotifier,
             ),
           ),
           _card(
             context,
             Icons.info_outline,
             'About Birthday Marker',
-            const PlaceholderPage(title: 'About Birthday Marker') as Widget,
+            const PlaceholderPage(title: 'About Birthday Marker'),
           ),
         ],
       ),
@@ -63,7 +62,6 @@ class SettingsPage extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon),
         title: Text(title),
-        trailing: const Icon(Icons.arrow_forward),
         onTap: () {
           Navigator.push(
             context,
@@ -77,7 +75,6 @@ class SettingsPage extends StatelessWidget {
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
-
   const PlaceholderPage({super.key, required this.title});
 
   @override
