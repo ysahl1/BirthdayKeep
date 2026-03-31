@@ -3,9 +3,9 @@
 ========================= */
 import 'package:BirthdayMarker/main.dart';
 import 'package:flutter/material.dart';
-import 'calendarWidget.dart';
+// import 'calendarWidget.dart'; // 🔥 AUSKOMMENTIERT
 
-class BirthdayListPage extends StatelessWidget {
+class BirthdayListPage extends StatefulWidget {
   final List<BirthdayEntry> entries;
   final int Function(DateTime) nextAge;
   final int Function(DateTime) daysUntil;
@@ -19,10 +19,178 @@ class BirthdayListPage extends StatelessWidget {
     required this.onUpdate,
   });
 
+  @override
+  State<BirthdayListPage> createState() => _BirthdayListPageState();
+}
+
+class _BirthdayListPageState extends State<BirthdayListPage> {
+  // Filter-Optionen
+  SortOption _currentSort = SortOption.name;
+  bool _isAscending = true;
+
+  // -------------------
+  // Sortierte Liste
+  // -------------------
+  List<BirthdayEntry> get _sortedEntries {
+    final list = List<BirthdayEntry>.from(widget.entries);
+    
+    switch (_currentSort) {
+      case SortOption.name:
+        list.sort((a, b) => _isAscending 
+            ? a.name.compareTo(b.name)
+            : b.name.compareTo(a.name));
+        break;
+      
+      case SortOption.birthdayYear:
+        list.sort((a, b) => _isAscending
+            ? a.birthday.year.compareTo(b.birthday.year)
+            : b.birthday.year.compareTo(a.birthday.year));
+        break;
+      
+      case SortOption.recentlyAdded:
+        // Annahme: Die Reihenfolge in der Liste entspricht der Reihenfolge des Hinzufügens
+        if (!_isAscending) {
+          return list.reversed.toList();
+        }
+        break;
+    }
+    
+    return list;
+  }
+
+  // -------------------
+  // Filter-Dialog
+  // -------------------
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter'),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Sortieroptionen
+              _buildSortOption(
+                icon: Icons.check,
+                label: 'Name',
+                isSelected: _currentSort == SortOption.name,
+                onTap: () {
+                  setDialogState(() {
+                    setState(() {
+                      _currentSort = SortOption.name;
+                    });
+                  });
+                },
+              ),
+              _buildSortOption(
+                icon: Icons.check,
+                label: 'Geburtsjahr',
+                isSelected: _currentSort == SortOption.birthdayYear,
+                onTap: () {
+                  setDialogState(() {
+                    setState(() {
+                      _currentSort = SortOption.birthdayYear;
+                    });
+                  });
+                },
+              ),
+              _buildSortOption(
+                icon: Icons.check,
+                label: 'Zuletzt hinzugefügt',
+                isSelected: _currentSort == SortOption.recentlyAdded,
+                onTap: () {
+                  setDialogState(() {
+                    setState(() {
+                      _currentSort = SortOption.recentlyAdded;
+                    });
+                  });
+                },
+              ),
+              
+              const Divider(height: 32),
+              
+              // Aufsteigend/Absteigend
+              _buildSortOption(
+                icon: Icons.check,
+                label: 'Aufsteigend',
+                isSelected: _isAscending,
+                onTap: () {
+                  setDialogState(() {
+                    setState(() {
+                      _isAscending = true;
+                    });
+                  });
+                },
+              ),
+              _buildSortOption(
+                icon: Icons.check,
+                label: 'Absteigend',
+                isSelected: !_isAscending,
+                onTap: () {
+                  setDialogState(() {
+                    setState(() {
+                      _isAscending = false;
+                    });
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Schließen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortOption({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    // Dark Mode Detection
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected 
+                ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
+                : Colors.transparent,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isSelected 
+                    ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
+                    : (isDarkMode ? Colors.grey : null),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // -------------------
   // Edit-Dialog für Person
   // -------------------
-
   void _editPerson(BuildContext context, BirthdayEntry? e) {
     final entry = e ??
         BirthdayEntry(
@@ -78,7 +246,7 @@ class BirthdayListPage extends StatelessWidget {
                 entry.name = nameCtrl.text;
                 entry.birthday = birthday;
                 entry.notificationTime = time;
-                onUpdate(); // Speichert den Eintrag
+                widget.onUpdate(); // Speichert den Eintrag
                 Navigator.pop(context);
               },
               child: const Text('Save'),
@@ -93,8 +261,8 @@ class BirthdayListPage extends StatelessWidget {
   // Popup mit Details
   // -------------------
   void _showDetails(BuildContext context, BirthdayEntry e) {
-    final age = nextAge(e.birthday);
-    final days = daysUntil(e.birthday);
+    final age = widget.nextAge(e.birthday);
+    final days = widget.daysUntil(e.birthday);
 
     showDialog(
       context: context,
@@ -143,12 +311,20 @@ class BirthdayListPage extends StatelessWidget {
   // -------------------
   // Build
   // -------------------
-
   @override
   Widget build(BuildContext context) {
+    final sortedEntries = _sortedEntries;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Birthday List'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
+          ),
+        ],
+        /* // 🔥 KALENDER-BUTTON AUSKOMMENTIERT
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month),
@@ -162,13 +338,14 @@ class BirthdayListPage extends StatelessWidget {
             },
           ),
         ],
+        */
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: entries.length,
+        itemCount: sortedEntries.length,
         itemBuilder: (context, i) {
-          final e = entries[i];
-          final d = daysUntil(e.birthday);
+          final e = sortedEntries[i];
+          final d = widget.daysUntil(e.birthday);
 
           return Card(
             shape:
@@ -176,18 +353,18 @@ class BirthdayListPage extends StatelessWidget {
             child: ListTile(
               title: Text(e.name),
               subtitle: Text(d == 0
-                  ? 'Today ${nextAge(e.birthday)}'
-                  : 'In $d Days (${nextAge(e.birthday)})'),
+                  ? 'Today ${widget.nextAge(e.birthday)}'
+                  : 'In $d Days (${widget.nextAge(e.birthday)})'),
               trailing: GestureDetector(
                 onTap: () {
-                print("Invisible area pressed!");
-              _editPerson(context, e);
-          },
-            child: const SizedBox(
-            width: 24,
-            height: 24,
-  ),
-),
+                  print("Invisible area pressed!");
+                  _editPerson(context, e);
+                },
+                child: const SizedBox(
+                  width: 24,
+                  height: 24,
+                ),
+              ),
               onTap: () => _showDetails(context, e),
             ),
           );
@@ -196,18 +373,27 @@ class BirthdayListPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.search),
         onPressed: () {
-         showSearch(
-           context: context,
+          showSearch(
+            context: context,
             delegate: BirthdaySearchDelegate(
-             entries: entries,
-             onSelect: (e) => _showDetails(context, e),
+              entries: widget.entries,
+              onSelect: (e) => _showDetails(context, e),
+            ),
+          );
+        },
       ),
-    );
-  },
-),    
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
+}
+
+// -------------------
+// Sortier-Optionen Enum
+// -------------------
+enum SortOption {
+  name,
+  birthdayYear,
+  recentlyAdded,
 }
 
 // -------------------
@@ -256,24 +442,24 @@ class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
   }
 
   @override
-Widget buildSuggestions(BuildContext context) {
-  if (query.isEmpty) {
-    return const Center(
-      child: Text(
-        ' ',
-        style: TextStyle(color: Colors.grey),
-      ),
-    );
+  Widget buildSuggestions(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(
+        child: Text(
+          ' ',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final suggestions = entries
+        .where(
+          (e) => e.name.toLowerCase().contains(query.toLowerCase()),
+        )
+        .toList();
+
+    return _buildList(context, suggestions);
   }
-
-  final suggestions = entries
-      .where(
-        (e) => e.name.toLowerCase().contains(query.toLowerCase()),
-      )
-      .toList();
-
-  return _buildList(context, suggestions);
-}
 
   Widget _buildList(BuildContext context, List<BirthdayEntry> list) {
     if (list.isEmpty) {
@@ -299,6 +485,7 @@ Widget buildSuggestions(BuildContext context) {
   }
 }
 
+/* // 🔥 KALENDERSEITE AUSKOMMENTIERT - ZUM REAKTIVIEREN EINFACH KOMMENTARE ENTFERNEN
 // -------------------
 // Kalender-Seite
 // -------------------
@@ -350,3 +537,4 @@ class BirthdayCalendarPage extends StatelessWidget {
     );
   }
 }
+*/

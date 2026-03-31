@@ -1,11 +1,13 @@
 /* =========================
    Home Page
 ========================= */
+import 'dart:convert';
 import 'package:BirthdayMarker/settings.dart';
 import 'package:BirthdayMarker/list.dart';
 import 'package:BirthdayMarker/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BirthdayHomePage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
@@ -23,6 +25,39 @@ class BirthdayHomePage extends StatefulWidget {
 
 class _BirthdayHomePageState extends State<BirthdayHomePage> {
   final List<BirthdayEntry> entries = [];
+  static const String _storageKey = 'birthday_entries';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEntries();
+  }
+
+  // -------------------
+  // Laden & Speichern
+  // -------------------
+
+  Future<void> _loadEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_storageKey);
+    if (jsonString != null) {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      setState(() {
+        entries.clear();
+        entries.addAll(jsonList.map((e) => BirthdayEntry.fromJson(e as Map<String, dynamic>)));
+      });
+    }
+  }
+
+  Future<void> _saveEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = jsonEncode(entries.map((e) => e.toJson()).toList());
+    await prefs.setString(_storageKey, jsonString);
+  }
+
+  // -------------------
+  // Hilfsfunktionen
+  // -------------------
 
   int nextAge(DateTime birthday) {
     final now = DateTime.now();
@@ -70,10 +105,10 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
     );
 
     if (shouldExit == true) {
-      SystemNavigator.pop(); // Schließt die App
+      SystemNavigator.pop();
     }
     
-    return false; // Verhindert das automatische Zurückgehen
+    return false;
   }
 
   void _addEntryDialog() {
@@ -132,6 +167,7 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
                       notificationTime: time!,
                     ));
                   });
+                  _saveEntries(); // ← nach jedem Hinzufügen speichern
                   Navigator.pop(context);
                 }
               },
@@ -173,7 +209,10 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
                         entries: entries,
                         nextAge: nextAge,
                         daysUntil: daysUntil,
-                        onUpdate: () => setState(() {}),
+                        onUpdate: () {
+                          setState(() {});
+                          _saveEntries(); // ← nach jedem Edit speichern
+                        },
                       ),
                     ),
                   );

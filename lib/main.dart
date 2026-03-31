@@ -17,6 +17,26 @@ class BirthdayEntry {
     required this.birthday,
     required this.notificationTime,
   });
+
+  // JSON speichern
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'birthday': birthday.toIso8601String(),
+        'notificationHour': notificationTime.hour,
+        'notificationMinute': notificationTime.minute,
+      };
+
+  // JSON laden
+  factory BirthdayEntry.fromJson(Map<String, dynamic> json) {
+    return BirthdayEntry(
+      name: json['name'] as String,
+      birthday: DateTime.parse(json['birthday'] as String),
+      notificationTime: TimeOfDay(
+        hour: json['notificationHour'] as int,
+        minute: json['notificationMinute'] as int,
+      ),
+    );
+  }
 }
 
 class BirthdayMarkerApp extends StatefulWidget {
