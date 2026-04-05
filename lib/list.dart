@@ -3,7 +3,6 @@
 ========================= */
 import 'package:BirthdayMarker/main.dart';
 import 'package:flutter/material.dart';
-// import 'calendarWidget.dart'; // 🔥 AUSKOMMENTIERT
 
 class BirthdayListPage extends StatefulWidget {
   final List<BirthdayEntry> entries;
@@ -24,37 +23,64 @@ class BirthdayListPage extends StatefulWidget {
 }
 
 class _BirthdayListPageState extends State<BirthdayListPage> {
-  // Filter-Optionen
   SortOption _currentSort = SortOption.name;
   bool _isAscending = true;
+
+  // -------------------
+  // Zodiac Sign
+  // -------------------
+  String _getZodiacSign(DateTime birthday) {
+    final month = birthday.month;
+    final day = birthday.day;
+
+    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return 'Aries';
+    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return 'Taurus';
+    if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return 'Gemini';
+    if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return 'Cancer';
+    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return 'Leo';
+    if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return 'Virgo';
+    if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return 'Libra';
+    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return 'Scorpio';
+    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return 'Sagittarius';
+    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return 'Capricorn';
+    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return 'Aquarius';
+    return 'Pisces';
+  }
 
   // -------------------
   // Sortierte Liste
   // -------------------
   List<BirthdayEntry> get _sortedEntries {
     final list = List<BirthdayEntry>.from(widget.entries);
-    
+
     switch (_currentSort) {
       case SortOption.name:
-        list.sort((a, b) => _isAscending 
+        list.sort((a, b) => _isAscending
             ? a.name.compareTo(b.name)
             : b.name.compareTo(a.name));
         break;
-      
+
       case SortOption.birthdayYear:
         list.sort((a, b) => _isAscending
             ? a.birthday.year.compareTo(b.birthday.year)
             : b.birthday.year.compareTo(a.birthday.year));
         break;
-      
+
       case SortOption.recentlyAdded:
-        // Annahme: Die Reihenfolge in der Liste entspricht der Reihenfolge des Hinzufügens
         if (!_isAscending) {
           return list.reversed.toList();
         }
         break;
+
+      case SortOption.upcomingFromToday:
+        list.sort((a, b) {
+          final dA = widget.daysUntil(a.birthday);
+          final dB = widget.daysUntil(b.birthday);
+          return _isAscending ? dA.compareTo(dB) : dB.compareTo(dA);
+        });
+        break;
     }
-    
+
     return list;
   }
 
@@ -70,7 +96,6 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
           builder: (context, setDialogState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Sortieroptionen
               _buildSortOption(
                 icon: Icons.check,
                 label: 'Name',
@@ -107,10 +132,19 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                   });
                 },
               ),
-              
+              _buildSortOption(
+                icon: Icons.check,
+                label: 'Ab heute',
+                isSelected: _currentSort == SortOption.upcomingFromToday,
+                onTap: () {
+                  setDialogState(() {
+                    setState(() {
+                      _currentSort = SortOption.upcomingFromToday;
+                    });
+                  });
+                },
+              ),
               const Divider(height: 32),
-              
-              // Aufsteigend/Absteigend
               _buildSortOption(
                 icon: Icons.check,
                 label: 'Aufsteigend',
@@ -154,9 +188,8 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    // Dark Mode Detection
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -166,9 +199,9 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
             Icon(
               icon,
               size: 20,
-              color: isSelected 
-                ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
-                : Colors.transparent,
+              color: isSelected
+                  ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
+                  : Colors.transparent,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -176,9 +209,9 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                 label,
                 style: TextStyle(
                   fontSize: 16,
-                  color: isSelected 
-                    ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
-                    : (isDarkMode ? Colors.grey : null),
+                  color: isSelected
+                      ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
+                      : (isDarkMode ? Colors.grey : null),
                 ),
               ),
             ),
@@ -189,7 +222,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   }
 
   // -------------------
-  // Edit-Dialog für Person
+  // Edit-Dialog
   // -------------------
   void _editPerson(BuildContext context, BirthdayEntry? e) {
     final entry = e ??
@@ -246,7 +279,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                 entry.name = nameCtrl.text;
                 entry.birthday = birthday;
                 entry.notificationTime = time;
-                widget.onUpdate(); // Speichert den Eintrag
+                widget.onUpdate();
                 Navigator.pop(context);
               },
               child: const Text('Save'),
@@ -258,11 +291,12 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   }
 
   // -------------------
-  // Popup mit Details
+  // Detail-Popup
   // -------------------
   void _showDetails(BuildContext context, BirthdayEntry e) {
     final age = widget.nextAge(e.birthday);
     final days = widget.daysUntil(e.birthday);
+    final zodiac = _getZodiacSign(e.birthday);
 
     showDialog(
       context: context,
@@ -279,22 +313,34 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
-                Navigator.pop(context); // Popup schließen
-                _editPerson(context, e); // Edit-Dialog öffnen
+                Navigator.pop(context);
+                _editPerson(context, e);
               },
             ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Birthday: ${e.birthday.day}.${e.birthday.month}.${e.birthday.year}'),
+            const SizedBox(height: 6),
             Text('Reminder: ${e.notificationTime.format(context)}'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Text('Zodiac Sign:  '),
+                Text(
+                  zodiac,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
             Text(
               days == 0
-                  ? "Today is the birthday!"
-                  : 'In $days Days (${age} years old)',
+                  ? 'Today is the birthday!'
+                  : 'In $days Days ($age years old)',
             ),
           ],
         ),
@@ -314,7 +360,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   @override
   Widget build(BuildContext context) {
     final sortedEntries = _sortedEntries;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Birthday List'),
@@ -324,21 +370,6 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
             onPressed: _showFilterDialog,
           ),
         ],
-        /* // 🔥 KALENDER-BUTTON AUSKOMMENTIERT
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BirthdayCalendarPage(birthdayEntries: entries, entries: entries),
-                ),
-              );
-            },
-          ),
-        ],
-        */
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -348,22 +379,15 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
           final d = widget.daysUntil(e.birthday);
 
           return Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: ListTile(
               title: Text(e.name),
               subtitle: Text(d == 0
                   ? 'Today ${widget.nextAge(e.birthday)}'
                   : 'In $d Days (${widget.nextAge(e.birthday)})'),
               trailing: GestureDetector(
-                onTap: () {
-                  print("Invisible area pressed!");
-                  _editPerson(context, e);
-                },
-                child: const SizedBox(
-                  width: 24,
-                  height: 24,
-                ),
+                onTap: () => _editPerson(context, e),
+                child: const SizedBox(width: 24, height: 24),
               ),
               onTap: () => _showDetails(context, e),
             ),
@@ -388,12 +412,13 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
 }
 
 // -------------------
-// Sortier-Optionen Enum
+// Sortier-Optionen
 // -------------------
 enum SortOption {
   name,
   birthdayYear,
   recentlyAdded,
+  upcomingFromToday,
 }
 
 // -------------------
@@ -433,11 +458,8 @@ class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
   @override
   Widget buildResults(BuildContext context) {
     final results = entries
-        .where(
-          (e) => e.name.toLowerCase().contains(query.toLowerCase()),
-        )
+        .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
-
     return _buildList(context, results);
   }
 
@@ -445,26 +467,17 @@ class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
   Widget buildSuggestions(BuildContext context) {
     if (query.isEmpty) {
       return const Center(
-        child: Text(
-          ' ',
-          style: TextStyle(color: Colors.grey),
-        ),
+        child: Text(' ', style: TextStyle(color: Colors.grey)),
       );
     }
-
     final suggestions = entries
-        .where(
-          (e) => e.name.toLowerCase().contains(query.toLowerCase()),
-        )
+        .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
         .toList();
-
     return _buildList(context, suggestions);
   }
 
   Widget _buildList(BuildContext context, List<BirthdayEntry> list) {
-    if (list.isEmpty) {
-      return const Center(child: Text('No results'));
-    }
+    if (list.isEmpty) return const Center(child: Text('No results'));
 
     return ListView.builder(
       itemCount: list.length,
@@ -472,69 +485,13 @@ class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
         final e = list[i];
         return ListTile(
           title: Text(e.name),
-          subtitle: Text(
-            '${e.birthday.day}.${e.birthday.month}.${e.birthday.year}',
-          ),
+          subtitle: Text('${e.birthday.day}.${e.birthday.month}.${e.birthday.year}'),
           onTap: () {
             close(context, e);
-            onSelect(e); // 🔥 öffnet Detail-Popup
+            onSelect(e);
           },
         );
       },
     );
   }
 }
-
-/* // 🔥 KALENDERSEITE AUSKOMMENTIERT - ZUM REAKTIVIEREN EINFACH KOMMENTARE ENTFERNEN
-// -------------------
-// Kalender-Seite
-// -------------------
-class BirthdayCalendarPage extends StatelessWidget {
-  final List<BirthdayEntry> birthdayEntries;
-  
-  final dynamic entries;
-  const BirthdayCalendarPage({super.key, required this.entries, required this.birthdayEntries});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Calendar'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _cardCalendar(context, ' ', birthdayEntries),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-    
-  Widget _cardCalendar(BuildContext context, String title, List<BirthdayEntry> entries) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 350, // Höhe des Kalenders, kann angepasst werden
-              child: BirthdayCalendar(
-                entries: entries,
-                shortDate: (d) {
-                  const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-                  return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year % 100} ${weekdays[d.weekday - 1]}';
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-*/

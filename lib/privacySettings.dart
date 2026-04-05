@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:BirthdayMarker/services/biometricService.dart';
+import 'package:BirthdayMarker/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BirthdayPrivacySettings extends StatefulWidget {
   const BirthdayPrivacySettings({super.key});
@@ -116,6 +120,18 @@ class privacySettingsState extends State<BirthdayPrivacySettings> {
               ),
               value: _biometricEnabled,
               onChanged: _biometricAvailable ? _toggleBiometric : null,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Export Card
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('Export List'),
+              subtitle: const Text('Save as TXT or PDF'),
+              onTap: () {
+                // Handle export functionality
+              },
             ),
           ),
         ],

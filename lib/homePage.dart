@@ -12,11 +12,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class BirthdayHomePage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
   final ValueNotifier<Locale> localeNotifier;
+  final ValueNotifier<Color> accentColorNotifier;
 
   const BirthdayHomePage({
     super.key,
     required this.themeNotifier,
     required this.localeNotifier,
+    required this.accentColorNotifier,
   });
 
   @override
@@ -107,7 +109,7 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
     if (shouldExit == true) {
       SystemNavigator.pop();
     }
-    
+
     return false;
   }
 
@@ -167,7 +169,7 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
                       notificationTime: time!,
                     ));
                   });
-                  _saveEntries(); // ← nach jedem Hinzufügen speichern
+                  _saveEntries();
                   Navigator.pop(context);
                 }
               },
@@ -211,7 +213,7 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
                         daysUntil: daysUntil,
                         onUpdate: () {
                           setState(() {});
-                          _saveEntries(); // ← nach jedem Edit speichern
+                          _saveEntries();
                         },
                       ),
                     ),
@@ -227,6 +229,7 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
                       builder: (_) => SettingsPage(
                         themeNotifier: widget.themeNotifier,
                         localeNotifier: widget.localeNotifier,
+                        accentColorNotifier: widget.accentColorNotifier,
                       ),
                     ),
                   );

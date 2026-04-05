@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:BirthdayMarker/privacySettings.dart';
 import 'package:BirthdayMarker/designSettings.dart';
 
-
 class SettingsPage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
   final ValueNotifier<Locale> localeNotifier;
+  final ValueNotifier<Color> accentColorNotifier;
 
   const SettingsPage({
     super.key,
     required this.themeNotifier,
     required this.localeNotifier,
+    required this.accentColorNotifier,
   });
 
   @override
@@ -44,6 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
             BirthdayDesignSettings(
               themeNotifier: widget.themeNotifier,
               localeNotifier: widget.localeNotifier,
+              accentColorNotifier: widget.accentColorNotifier,
             ),
           ),
           _card(

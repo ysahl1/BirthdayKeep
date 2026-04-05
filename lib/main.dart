@@ -18,7 +18,6 @@ class BirthdayEntry {
     required this.notificationTime,
   });
 
-  // JSON speichern
   Map<String, dynamic> toJson() => {
         'name': name,
         'birthday': birthday.toIso8601String(),
@@ -26,7 +25,6 @@ class BirthdayEntry {
         'notificationMinute': notificationTime.minute,
       };
 
-  // JSON laden
   factory BirthdayEntry.fromJson(Map<String, dynamic> json) {
     return BirthdayEntry(
       name: json['name'] as String,
@@ -47,10 +45,14 @@ class BirthdayMarkerApp extends StatefulWidget {
 }
 
 class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
-  final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
+  final ValueNotifier<ThemeMode> themeNotifier =
+      ValueNotifier(ThemeMode.system);
   final ValueNotifier<Locale> localeNotifier = ValueNotifier(const Locale('en'));
+  final ValueNotifier<Color> accentColorNotifier =
+      ValueNotifier(Colors.blue);
+
   final BiometricService _biometricService = BiometricService();
-  
+
   bool _isAuthenticated = false;
   bool _isCheckingAuth = true;
 
@@ -62,7 +64,6 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
 
   Future<void> _checkAuthentication() async {
     final biometricEnabled = await _biometricService.isBiometricEnabled();
-    
     setState(() {
       _isAuthenticated = !biometricEnabled;
       _isCheckingAuth = false;
@@ -73,13 +74,21 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
     setState(() => _isAuthenticated = true);
   }
 
+  PageTransitionsTheme get _pageTransitions => const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        },
+      );
+
   @override
   Widget build(BuildContext context) {
     if (_isCheckingAuth) {
-      return MaterialApp(
-        home: Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+      return const MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -101,54 +110,45 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
       );
     }
 
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeNotifier,
-      builder: (_, themeMode, __) {
-        return ValueListenableBuilder<Locale>(
-          valueListenable: localeNotifier,
-          builder: (_, locale, __) {
-            return MaterialApp(
-              title: 'BirthdayMarker',
-              debugShowCheckedModeBanner: false,
-              themeMode: themeMode,
-              theme: ThemeData(
-                useMaterial3: true,
-                colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-                pageTransitionsTheme: const PageTransitionsTheme(
-                  builders: {
-                    TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-                  },
-                ),
-              ),
-              darkTheme: ThemeData(
-                useMaterial3: true,
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: Colors.blue,
-                  brightness: Brightness.dark,
-                ),
-                pageTransitionsTheme: const PageTransitionsTheme(
-                  builders: {
-                    TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-                    TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-                  },
-                ),
-              ),
-              locale: locale,
-              supportedLocales: const [
-                Locale('de'),
-                Locale('en'),
-              ],
-              home: BirthdayHomePage(
-                themeNotifier: themeNotifier,
-                localeNotifier: localeNotifier,
-              ),
+    return ValueListenableBuilder<Color>(
+      valueListenable: accentColorNotifier,
+      builder: (_, accentColor, __) {
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: themeNotifier,
+          builder: (_, themeMode, __) {
+            return ValueListenableBuilder<Locale>(
+              valueListenable: localeNotifier,
+              builder: (_, locale, __) {
+                return MaterialApp(
+                  title: 'BirthdayMarker',
+                  debugShowCheckedModeBanner: false,
+                  themeMode: themeMode,
+                  theme: ThemeData(
+                    useMaterial3: true,
+                    colorScheme:
+                        ColorScheme.fromSeed(seedColor: accentColor),
+                    pageTransitionsTheme: _pageTransitions,
+                  ),
+                  darkTheme: ThemeData(
+                    useMaterial3: true,
+                    colorScheme: ColorScheme.fromSeed(
+                      seedColor: accentColor,
+                      brightness: Brightness.dark,
+                    ),
+                    pageTransitionsTheme: _pageTransitions,
+                  ),
+                  locale: locale,
+                  supportedLocales: const [
+                    Locale('de'),
+                    Locale('en'),
+                  ],
+                  home: BirthdayHomePage(
+                    themeNotifier: themeNotifier,
+                    localeNotifier: localeNotifier,
+                    accentColorNotifier: accentColorNotifier,
+                  ),
+                );
+              },
             );
           },
         );
