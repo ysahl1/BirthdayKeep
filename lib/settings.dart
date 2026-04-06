@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:BirthdayMarker/privacySettings.dart';
 import 'package:BirthdayMarker/designSettings.dart';
+import 'package:BirthdayMarker/notificationSettings.dart';
 
 class SettingsPage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
@@ -36,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
             context,
             Icons.notifications,
             'Notification',
-            const PlaceholderPage(title: 'Notification'),
+            const NotificationSettingsPage(),
           ),
           _card(
             context,

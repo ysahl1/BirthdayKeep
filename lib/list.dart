@@ -3,6 +3,7 @@
 ========================= */
 import 'package:BirthdayMarker/main.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BirthdayListPage extends StatefulWidget {
   final List<BirthdayEntry> entries;
@@ -25,6 +26,33 @@ class BirthdayListPage extends StatefulWidget {
 class _BirthdayListPageState extends State<BirthdayListPage> {
   SortOption _currentSort = SortOption.name;
   bool _isAscending = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSortSettings();
+  }
+
+  // -------------------
+  // Einstellungen laden
+  // -------------------
+  Future<void> _loadSortSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      final sortIndex = prefs.getInt('sortOption') ?? 0;
+      _currentSort = SortOption.values[sortIndex];
+      _isAscending = prefs.getBool('isAscending') ?? true;
+    });
+  }
+
+  // -------------------
+  // Einstellungen speichern
+  // -------------------
+  Future<void> _saveSortSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('sortOption', _currentSort.index);
+    await prefs.setBool('isAscending', _isAscending);
+  }
 
   // -------------------
   // Zodiac Sign
@@ -106,6 +134,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                       _currentSort = SortOption.name;
                     });
                   });
+                  _saveSortSettings();
                 },
               ),
               _buildSortOption(
@@ -118,6 +147,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                       _currentSort = SortOption.birthdayYear;
                     });
                   });
+                  _saveSortSettings();
                 },
               ),
               _buildSortOption(
@@ -130,6 +160,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                       _currentSort = SortOption.recentlyAdded;
                     });
                   });
+                  _saveSortSettings();
                 },
               ),
               _buildSortOption(
@@ -142,6 +173,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                       _currentSort = SortOption.upcomingFromToday;
                     });
                   });
+                  _saveSortSettings();
                 },
               ),
               const Divider(height: 32),
@@ -155,6 +187,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                       _isAscending = true;
                     });
                   });
+                  _saveSortSettings();
                 },
               ),
               _buildSortOption(
@@ -167,6 +200,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                       _isAscending = false;
                     });
                   });
+                  _saveSortSettings();
                 },
               ),
             ],
