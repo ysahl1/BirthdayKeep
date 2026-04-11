@@ -37,6 +37,7 @@ dependencies:
   table_calendar: ^3.0.9
   local_auth: ^2.1.8
   shared_preferences: ^2.2.2
+  url_launcher: ^6.2.5
 
 
 dev_dependencies:
@@ -66,6 +67,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/icon/BDMIcon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

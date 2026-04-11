@@ -23,7 +23,6 @@ class BirthdayDesignSettings extends StatelessWidget {
     _AccentColor('Yellow',  Color(0xFFFFC107)),
     _AccentColor('Beige',   Color(0xFFD4A373)),
     _AccentColor('Brown',   Color(0xFF795548)),
-    _AccentColor('Gray',    Color(0xFF9E9E9E)),
   ];
 
   @override

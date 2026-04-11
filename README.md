@@ -25,7 +25,7 @@ No accounts, no tracking, no cloud — all data stays on your device.
 	•	Exported files may contain sensitive data — handling them is entirely the user’s responsibility
 
 Formal Privacy Policy:
-> *[Hier Link zu Website/Datenschutzerklärung einfügen]*
+> *[]*
 
 ***
 
@@ -88,7 +88,7 @@ Birthday Marker offers the following settings:
 
 ***
 
-## Technik
+## Tech
 
 	•	Framework: Flutter
 	•	Platforms: Android
