@@ -83,7 +83,7 @@ Birthday Marker offers the following settings:
 
 	•	Multi-language support (e.g. French/Spanish)
 	•	Widgets / home screen display / 3D-Touch 
-  •	Calendar
+    •	Calendar
 
 
 ***

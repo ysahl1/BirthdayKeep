@@ -378,7 +378,18 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
             ),
           ],
         ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                widget.entries.remove(e);
+              });
+              widget.onUpdate();
+            },
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
