@@ -1,7 +1,7 @@
 
-# Birthday Marker
+# Birthday Keep
 
-Birthday Marker is a local and privacy-friendly app for managing birthdays.
+Birthday Keep is a local and privacy-friendly app for managing birthdays.
 No accounts, no tracking, no cloud — all data stays on your device.
 
 ***
