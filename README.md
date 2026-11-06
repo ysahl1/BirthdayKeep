@@ -1,8 +1,20 @@
 
-# Birthday Keep
+# BirthdayKeep
 
-Birthday Keep is a local and privacy-friendly app for managing birthdays.
+BirthdayKeep is a local and privacy-friendly app for managing birthdays.
 No accounts, no tracking, no cloud — all data stays on your device.
+
+## Download
+
+[![Download APK](https://img.shields.io/badge/Download-APK-5e17eb?style=for-the-badge&logo=android&logoColor=white)](https://github.com/ysahl1/BirthdayKeep/releases/latest/download/BirthdayKeep-arm64-v8a.apk)
+
+| Device | Direct download |
+|---|---|
+| Most phones (64-bit, since about 2017) | [BirthdayKeep-arm64-v8a.apk](https://github.com/ysahl1/BirthdayKeep/releases/latest/download/BirthdayKeep-arm64-v8a.apk) |
+| Older phones (32-bit) | [BirthdayKeep-armeabi-v7a.apk](https://github.com/ysahl1/BirthdayKeep/releases/latest/download/BirthdayKeep-armeabi-v7a.apk) |
+| Emulators and x86 devices | [BirthdayKeep-x86_64.apk](https://github.com/ysahl1/BirthdayKeep/releases/latest/download/BirthdayKeep-x86_64.apk) |
+
+All versions: [https://github.com/ysahl1/BirthdayKeep/releases](https://github.com/ysahl1/BirthdayKeep/releases)
 
 ***
 
@@ -13,6 +25,7 @@ No accounts, no tracking, no cloud — all data stays on your device.
 	•	Configurable notifications (e.g. X days before, specific time)
 	•	Light/Dark mode (optional system theme)
 	•	Search and sorting by name, date, or upcoming birthday
+	•	Calendar view of all birthdays
 	•	Optional data import/export
 
 ***
@@ -21,11 +34,7 @@ No accounts, no tracking, no cloud — all data stays on your device.
 
 	•	All birthday data is stored exclusively locally on your device
 	•	There is no external server communication, tracking, or analytics
-	•	If contact access is provided: only name and birthday are read — data never leaves the device
 	•	Exported files may contain sensitive data — handling them is entirely the user’s responsibility
-
-Formal Privacy Policy:
-> *[]*
 
 ***
 
@@ -33,32 +42,51 @@ Formal Privacy Policy:
 
 ### Android
 
-	•	Download the APK from Releases:
-    https://github.com/ysahl1/BirthdayMarker.git
+	•	Download the APK (see Download above) or from Releases:
+    https://github.com/ysahl1/BirthdayKeep/releases
 	•	Transfer the APK to your device and install it
     (You may need to enable “Install from unknown sources”)
+ 	•   Or install it from F-Droid:
+    https://f-droid.org/packages/com.ysahl1.birthdaykeep/
 
-  (Optional):
-	• Available via F-Droid or other store:
-    [Insert F-Droid or store link if available]
+### Building a signed release
+
+    keytool -genkey -v -keystore android/birthdaykeep.jks -keyalg RSA -keysize 4096 -validity 10000 -alias birthdaykeep
+
+Then create `android/key.properties` (both files stay out of git):
+
+    storeFile=birthdaykeep.jks
+    storePassword=...
+    keyAlias=birthdaykeep
+    keyPassword=...
+
+Without this file, `flutter build apk --release` produces an unsigned APK.
+
+### Publishing a release
+
+    flutter build apk --release --split-per-abi
+
+Rename the three files in `build/app/outputs/flutter-apk/` to
+`BirthdayKeep-arm64-v8a.apk`, `BirthdayKeep-armeabi-v7a.apk` and
+`BirthdayKeep-x86_64.apk` and attach them to a new GitHub release. The download
+links above always point to the latest release.
 
 ## Usage
 
 	•	All birthday data is stored exclusively locally on your device
 	•	There is no external server communication, tracking, or analytics
-	•	If contact access is provided: only name and birthday are read — data never leaves the device
 	•	Exported files may contain sensitive data — handling them is entirely the user’s responsibility
 
 ***
 
 ## Settings
 
-Birthday Marker offers the following settings:
+BirthdayKeep offers the following settings:
 
 **Privacy & Security**
 	•	Information about local data storage
 	•	(Optional) App lock via PIN/biometrics
-	•	Data export/import (e.g. TXT file or PDF)
+	•	Data export/import (TXT or PDF export, JSON backup)
 	•	Backup functionality
 
 **Notifications**
@@ -70,7 +98,7 @@ Birthday Marker offers the following settings:
 	•	Light / Dark / System theme
 	•	Language selection
 
-**About Birthday Marker**
+**About BirthdayKeep**
 	•	App version
 	•	License
 	•	Links (repository, issue tracker, privacy policy)
@@ -83,7 +111,6 @@ Birthday Marker offers the following settings:
 
 	•	Multi-language support (e.g. French/Spanish)
 	•	Widgets / home screen display / 3D-Touch 
-    •	Calendar
 
 
 ***
@@ -92,8 +119,8 @@ Birthday Marker offers the following settings:
 
 	•	Framework: Flutter
 	•	Platforms: Android
-	•	Architecture/State Management: [e.g. Provider, Riverpod, Bloc – adjust]
-	•	Minimum Requirements: [e.g. Android 8.0+]
+	•	Architecture/State Management: plain Flutter (ValueNotifier, SharedPreferences)
+	•	Minimum Requirements: Android 7.0+
 
 ***
 
@@ -118,7 +145,7 @@ Details:
 ## Bugs & Feedback
 
 	•	Report bugs via GitHub Issues:
-   (https://github.com/ysahl1/BirthdayMarker/issues)
+   (https://github.com/ysahl1/BirthdayKeep/issues)
 	•	Suggestions, ideas, and questions: Issues or Discussions
 
 Please include:
@@ -131,8 +158,9 @@ Please include:
 
 ## License
 
-This project is licensed under the [YOUR LICENSE, e.g. MIT / Apache-2.0] license.
+This project is licensed under the MIT license.
 See the LICENSE file for the full text.
+The app icon is generated by `tool/generate_icon.dart` and falls under the same license. The bundled Roboto font is licensed under Apache-2.0.
 
 ***
 

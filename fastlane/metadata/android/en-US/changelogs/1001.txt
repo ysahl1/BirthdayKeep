@@ -1,0 +1,1 @@
+First release of BirthdayKeep: birthday list, calendar, reminders with advance notice, app lock, TXT/PDF export, backup and restore, German and English.

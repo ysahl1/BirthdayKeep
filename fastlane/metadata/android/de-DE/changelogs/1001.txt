@@ -1,0 +1,1 @@
+Erste Version von BirthdayKeep: Geburtstagsliste, Kalender, Erinnerungen mit Vorlauf, App-Sperre, TXT-/PDF-Export, Backup und Wiederherstellung, Deutsch und Englisch.

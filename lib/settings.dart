@@ -1,4 +1,6 @@
+import 'package:BirthdayMarker/stretchListView.dart';
 import 'package:flutter/material.dart';
+import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/privacySettings.dart';
 import 'package:BirthdayMarker/designSettings.dart';
 import 'package:BirthdayMarker/notificationSettings.dart';
@@ -8,12 +10,14 @@ class SettingsPage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
   final ValueNotifier<Locale> localeNotifier;
   final ValueNotifier<Color> accentColorNotifier;
+  final ValueNotifier<bool> amoledNotifier;
 
   const SettingsPage({
     super.key,
     required this.themeNotifier,
     required this.localeNotifier,
     required this.accentColorNotifier,
+    required this.amoledNotifier,
   });
 
   @override
@@ -23,39 +27,41 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
+      appBar: AppBar(title: Text(s.settings)),
+      body: StretchListView(
         padding: const EdgeInsets.all(16),
         children: [
           _card(
             context,
             Icons.security,
-            'Privacy & Security',
+            s.privacy,
             const BirthdayPrivacySettings(),
           ),
           _card(
             context,
             Icons.notifications,
-            'Notification',
+            s.notifications,
             const NotificationSettingsPage(),
           ),
           _card(
             context,
             Icons.palette,
-            'Design',
+            s.design,
             BirthdayDesignSettings(
               themeNotifier: widget.themeNotifier,
               localeNotifier: widget.localeNotifier,
               accentColorNotifier: widget.accentColorNotifier,
+              amoledNotifier: widget.amoledNotifier,
             ),
           ),
           _card(
             context,
             Icons.info_outline,
-            'About Birthday Marker',
-            const aboutBirthdayMarkerPage(), // ← statt PlaceholderPage
-),
+            s.about,
+            const aboutBirthdayMarkerPage(),
+          ),
         ],
       ),
     );
@@ -73,19 +79,6 @@ class _SettingsPageState extends State<SettingsPage> {
           );
         },
       ),
-    );
-  }
-}
-
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-  const PlaceholderPage({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title)),
     );
   }
 }

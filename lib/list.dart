@@ -1,7 +1,12 @@
 /* =========================
    Geburtstagsliste
 ========================= */
+import 'package:BirthdayMarker/birthdayPicker.dart';
+import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/main.dart';
+import 'package:BirthdayMarker/services/appSettings.dart';
+import 'package:BirthdayMarker/stretchListView.dart';
+import 'package:BirthdayMarker/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +15,7 @@ class BirthdayListPage extends StatefulWidget {
   final int Function(DateTime) nextAge;
   final int Function(DateTime) daysUntil;
   final VoidCallback onUpdate;
+  final VoidCallback onOpenCalendar;
 
   const BirthdayListPage({
     super.key,
@@ -17,6 +23,7 @@ class BirthdayListPage extends StatefulWidget {
     required this.nextAge,
     required this.daysUntil,
     required this.onUpdate,
+    required this.onOpenCalendar,
   });
 
   @override
@@ -24,7 +31,7 @@ class BirthdayListPage extends StatefulWidget {
 }
 
 class _BirthdayListPageState extends State<BirthdayListPage> {
-  SortOption _currentSort = SortOption.name;
+  SortOption _currentSort = SortOption.upcomingFromToday;
   bool _isAscending = true;
 
   @override
@@ -33,13 +40,31 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
     _loadSortSettings();
   }
 
+  void _notifyUpdate() {
+    widget.onUpdate();
+    if (mounted) setState(() {});
+  }
+
+  void _openSearch(AppStrings s) {
+    showSearch(
+      context: context,
+      delegate: BirthdaySearchDelegate(
+        entries: widget.entries,
+        labels: s,
+        onSelect: (e) => _showDetails(context, e),
+      ),
+    );
+  }
+
   // -------------------
   // Einstellungen laden
   // -------------------
   Future<void> _loadSortSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-      final sortIndex = prefs.getInt('sortOption') ?? 0;
+      final sortIndex =
+          prefs.getInt('sortOption') ?? SortOption.upcomingFromToday.index;
       _currentSort = SortOption.values[sortIndex];
       _isAscending = prefs.getBool('isAscending') ?? true;
     });
@@ -68,10 +93,14 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
     if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return 'Leo';
     if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return 'Virgo';
     if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return 'Libra';
-    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return 'Scorpio';
-    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return 'Sagittarius';
-    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return 'Capricorn';
-    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return 'Aquarius';
+    if ((month == 10 && day >= 23) || (month == 11 && day <= 21))
+      return 'Scorpio';
+    if ((month == 11 && day >= 22) || (month == 12 && day <= 21))
+      return 'Sagittarius';
+    if ((month == 12 && day >= 22) || (month == 1 && day <= 19))
+      return 'Capricorn';
+    if ((month == 1 && day >= 20) || (month == 2 && day <= 18))
+      return 'Aquarius';
     return 'Pisces';
   }
 
@@ -83,15 +112,22 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
 
     switch (_currentSort) {
       case SortOption.name:
-        list.sort((a, b) => _isAscending
-            ? a.name.compareTo(b.name)
-            : b.name.compareTo(a.name));
+        list.sort(
+          (a, b) =>
+              _isAscending
+                  ? a.name.compareTo(b.name)
+                  : b.name.compareTo(a.name),
+        );
         break;
 
       case SortOption.birthdayYear:
-        list.sort((a, b) => _isAscending
-            ? a.birthday.year.compareTo(b.birthday.year)
-            : b.birthday.year.compareTo(a.birthday.year));
+        list.sort((a, b) {
+          // Einträge ohne Jahr stehen immer am Ende
+          if (a.yearKnown != b.yearKnown) return a.yearKnown ? -1 : 1;
+          return _isAscending
+              ? a.birthday.year.compareTo(b.birthday.year)
+              : b.birthday.year.compareTo(a.birthday.year);
+        });
         break;
 
       case SortOption.recentlyAdded:
@@ -118,101 +154,104 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Filter'),
-        content: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildSortOption(
-                icon: Icons.check,
-                label: 'Name',
-                isSelected: _currentSort == SortOption.name,
-                onTap: () {
-                  setDialogState(() {
-                    setState(() {
-                      _currentSort = SortOption.name;
-                    });
-                  });
-                  _saveSortSettings();
-                },
-              ),
-              _buildSortOption(
-                icon: Icons.check,
-                label: 'Geburtsjahr',
-                isSelected: _currentSort == SortOption.birthdayYear,
-                onTap: () {
-                  setDialogState(() {
-                    setState(() {
-                      _currentSort = SortOption.birthdayYear;
-                    });
-                  });
-                  _saveSortSettings();
-                },
-              ),
-              _buildSortOption(
-                icon: Icons.check,
-                label: 'Zuletzt hinzugefügt',
-                isSelected: _currentSort == SortOption.recentlyAdded,
-                onTap: () {
-                  setDialogState(() {
-                    setState(() {
-                      _currentSort = SortOption.recentlyAdded;
-                    });
-                  });
-                  _saveSortSettings();
-                },
-              ),
-              _buildSortOption(
-                icon: Icons.check,
-                label: 'Ab heute',
-                isSelected: _currentSort == SortOption.upcomingFromToday,
-                onTap: () {
-                  setDialogState(() {
-                    setState(() {
-                      _currentSort = SortOption.upcomingFromToday;
-                    });
-                  });
-                  _saveSortSettings();
-                },
-              ),
-              const Divider(height: 32),
-              _buildSortOption(
-                icon: Icons.check,
-                label: 'Aufsteigend',
-                isSelected: _isAscending,
-                onTap: () {
-                  setDialogState(() {
-                    setState(() {
-                      _isAscending = true;
-                    });
-                  });
-                  _saveSortSettings();
-                },
-              ),
-              _buildSortOption(
-                icon: Icons.check,
-                label: 'Absteigend',
-                isSelected: !_isAscending,
-                onTap: () {
-                  setDialogState(() {
-                    setState(() {
-                      _isAscending = false;
-                    });
-                  });
-                  _saveSortSettings();
-                },
+      builder:
+          (context) => AlertDialog(
+            title: Text(AppStrings.of(context).sort),
+            content: StatefulBuilder(
+              builder:
+                  (context, setDialogState) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSortOption(
+                        icon: Icons.check,
+                        label: AppStrings.of(context).name,
+                        isSelected: _currentSort == SortOption.name,
+                        onTap: () {
+                          setDialogState(() {
+                            setState(() {
+                              _currentSort = SortOption.name;
+                            });
+                          });
+                          _saveSortSettings();
+                        },
+                      ),
+                      _buildSortOption(
+                        icon: Icons.check,
+                        label: AppStrings.of(context).sortBirthYear,
+                        isSelected: _currentSort == SortOption.birthdayYear,
+                        onTap: () {
+                          setDialogState(() {
+                            setState(() {
+                              _currentSort = SortOption.birthdayYear;
+                            });
+                          });
+                          _saveSortSettings();
+                        },
+                      ),
+                      _buildSortOption(
+                        icon: Icons.check,
+                        label: AppStrings.of(context).sortRecentlyAdded,
+                        isSelected: _currentSort == SortOption.recentlyAdded,
+                        onTap: () {
+                          setDialogState(() {
+                            setState(() {
+                              _currentSort = SortOption.recentlyAdded;
+                            });
+                          });
+                          _saveSortSettings();
+                        },
+                      ),
+                      _buildSortOption(
+                        icon: Icons.check,
+                        label: AppStrings.of(context).sortFromToday,
+                        isSelected:
+                            _currentSort == SortOption.upcomingFromToday,
+                        onTap: () {
+                          setDialogState(() {
+                            setState(() {
+                              _currentSort = SortOption.upcomingFromToday;
+                            });
+                          });
+                          _saveSortSettings();
+                        },
+                      ),
+                      const Divider(height: 32),
+                      _buildSortOption(
+                        icon: Icons.check,
+                        label: AppStrings.of(context).ascending,
+                        isSelected: _isAscending,
+                        onTap: () {
+                          setDialogState(() {
+                            setState(() {
+                              _isAscending = true;
+                            });
+                          });
+                          _saveSortSettings();
+                        },
+                      ),
+                      _buildSortOption(
+                        icon: Icons.check,
+                        label: AppStrings.of(context).descending,
+                        isSelected: !_isAscending,
+                        onTap: () {
+                          setDialogState(() {
+                            setState(() {
+                              _isAscending = false;
+                            });
+                          });
+                          _saveSortSettings();
+                        },
+                      ),
+                    ],
+                  ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppStrings.of(context).close),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Schließen'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -233,9 +272,12 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
             Icon(
               icon,
               size: 20,
-              color: isSelected
-                  ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
-                  : Colors.transparent,
+              color:
+                  isSelected
+                      ? (isDarkMode
+                          ? Colors.white
+                          : Theme.of(context).primaryColor)
+                      : Colors.transparent,
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -243,9 +285,12 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                 label,
                 style: TextStyle(
                   fontSize: 16,
-                  color: isSelected
-                      ? (isDarkMode ? Colors.white : Theme.of(context).primaryColor)
-                      : (isDarkMode ? Colors.grey : null),
+                  color:
+                      isSelected
+                          ? (isDarkMode
+                              ? Colors.white
+                              : Theme.of(context).primaryColor)
+                          : (isDarkMode ? Colors.grey : null),
                 ),
               ),
             ),
@@ -259,67 +304,111 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   // Edit-Dialog
   // -------------------
   void _editPerson(BuildContext context, BirthdayEntry? e) {
-    final entry = e ??
+    final entry =
+        e ??
         BirthdayEntry(
-            name: '', birthday: DateTime.now(), notificationTime: TimeOfDay.now());
+          name: '',
+          birthday: DateTime.now(),
+          notificationTime: TimeOfDay.now(),
+        );
     final nameCtrl = TextEditingController(text: entry.name);
     DateTime birthday = entry.birthday;
     TimeOfDay time = entry.notificationTime;
+    bool yearKnown = entry.yearKnown;
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setD) => AlertDialog(
-          title: const Text('Edit Birthday'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: birthday,
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime(2100),
-                  );
-                  if (d != null) setD(() => birthday = d);
-                },
-                child: Text('${birthday.day}.${birthday.month}.${birthday.year}'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final t = await showTimePicker(
-                    context: context,
-                    initialTime: time,
-                  );
-                  if (t != null) setD(() => time = t);
-                },
-                child: Text(time.format(context)),
-              ),
-            ],
+      builder:
+          (_) => StatefulBuilder(
+            builder:
+                (context, setD) => AlertDialog(
+                  title: Text(AppStrings.of(context).editBirthday),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: InputDecoration(
+                          labelText: AppStrings.of(context).name,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final pick = await showBirthdayPicker(
+                            context,
+                            initialDate: birthday,
+                            yearKnown: yearKnown,
+                          );
+                          if (pick != null) {
+                            setD(() {
+                              birthday = pick.date;
+                              yearKnown = pick.yearKnown;
+                            });
+                          }
+                        },
+                        child: Text(
+                          AppSettings.instance.formatDate(
+                            birthday,
+                            withYear: yearKnown,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final t = await showTimePicker(
+                            context: context,
+                            initialTime: time,
+                          );
+                          if (t != null) setD(() => time = t);
+                        },
+                        child: Text(time.format(context)),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(AppStrings.of(context).cancel),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        entry.name = nameCtrl.text;
+                        entry.birthday =
+                            yearKnown
+                                ? birthday
+                                : BirthdayEntry.unknownYearDate(birthday);
+                        entry.yearKnown = yearKnown;
+                        entry.notificationTime = time;
+                        _notifyUpdate();
+                        Navigator.pop(context);
+                      },
+                      child: Text(AppStrings.of(context).save),
+                    ),
+                  ],
+                ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                entry.name = nameCtrl.text;
-                entry.birthday = birthday;
-                entry.notificationTime = time;
-                widget.onUpdate();
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
+    );
+  }
+
+  // -------------------
+  // Löschen mit Rückgängig
+  // -------------------
+  void _deleteEntry(BirthdayEntry e, AppStrings s) {
+    final index = widget.entries.indexOf(e);
+    widget.entries.remove(e);
+    _notifyUpdate();
+    showFeedback(
+      context,
+      s.entryDeleted(e.name),
+      type: FeedbackType.info,
+      icon: Icons.delete_outline_rounded,
+      action: SnackBarAction(
+        label: s.undo,
+        onPressed: () {
+          widget.entries.insert(index, e);
+          _notifyUpdate();
+        },
       ),
     );
   }
@@ -330,71 +419,79 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   void _showDetails(BuildContext context, BirthdayEntry e) {
     final age = widget.nextAge(e.birthday);
     final days = widget.daysUntil(e.birthday);
-    final zodiac = _getZodiacSign(e.birthday);
+    final s = AppStrings.of(context);
+    final zodiac = s.zodiac(_getZodiacSign(e.birthday));
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                e.name,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                Navigator.pop(context);
-                _editPerson(context, e);
-              },
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Birthday: ${e.birthday.day}.${e.birthday.month}.${e.birthday.year}'),
-            const SizedBox(height: 6),
-            Text('Reminder: ${e.notificationTime.format(context)}'),
-            const SizedBox(height: 6),
-            Row(
+      builder:
+          (_) => AlertDialog(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Zodiac Sign:  '),
-                Text(
-                  zodiac,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                Expanded(child: Text(e.name, overflow: TextOverflow.ellipsis)),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _editPerson(context, e);
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              days == 0
-                  ? 'Today is the birthday!'
-                  : 'In $days Days ($age years old)',
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.birthdayLabel(e.formattedDate)),
+                const SizedBox(height: 6),
+                Text(s.reminderLabel(e.notificationTime.format(context))),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(s.zodiacLabel),
+                    Text(
+                      zodiac,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  days == 0
+                      ? s.todayIsBirthday
+                      : e.yearKnown
+                      ? s.inDaysYearsOld(days, age)
+                      : s.inDays(days),
+                ),
+              ],
             ),
-          ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _deleteEntry(e, s);
+                },
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(s.close),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _monthHeader(BuildContext context, AppStrings s, int month) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+      child: Text(
+        s.months[month - 1],
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-        actionsAlignment: MainAxisAlignment.spaceBetween,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                widget.entries.remove(e);
-              });
-              widget.onUpdate();
-            },
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
@@ -405,51 +502,81 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   @override
   Widget build(BuildContext context) {
     final sortedEntries = _sortedEntries;
+    final s = AppStrings.of(context);
+
+    // Bei "Ab heute" steht über jedem Monat klein sein Name
+    final rows = <Object>[];
+    for (final e in sortedEntries) {
+      final month = e.birthday.month;
+      final previous = rows.isEmpty ? null : rows.last;
+      if (_currentSort == SortOption.upcomingFromToday &&
+          (previous is! BirthdayEntry || previous.birthday.month != month)) {
+        rows.add(month);
+      }
+      rows.add(e);
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Birthday List'),
+        title: Text(s.birthdayList),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
+            tooltip: s.sort,
             onPressed: _showFilterDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: s.calendar,
+            onPressed: widget.onOpenCalendar,
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: sortedEntries.length,
-        itemBuilder: (context, i) {
-          final e = sortedEntries[i];
-          final d = widget.daysUntil(e.birthday);
+      body: GestureDetector(
+        // Auch auf der leeren Fläche soll Zurückwischen funktionieren
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragEnd: (details) {
+          if ((details.primaryVelocity ?? 0) > 200) {
+            Navigator.maybePop(context);
+          }
+        },
+        child:
+            sortedEntries.isEmpty
+                ? Center(child: Text(s.noEntries))
+                : StretchListView.builder(
+                  // Unten Platz lassen, damit der Such-Knopf keine Karte verdeckt
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                  itemCount: rows.length,
+                  itemBuilder: (context, i) {
+                    final row = rows[i];
+                    if (row is int) return _monthHeader(context, s, row);
+                    final e = row as BirthdayEntry;
+                    final d = widget.daysUntil(e.birthday);
+                    final age = widget.nextAge(e.birthday);
 
-          return Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              title: Text(e.name),
-              subtitle: Text(d == 0
-                  ? 'Today ${widget.nextAge(e.birthday)}'
-                  : 'In $d Days (${widget.nextAge(e.birthday)})'),
-              trailing: GestureDetector(
-                onTap: () => _editPerson(context, e),
-                child: const SizedBox(width: 24, height: 24),
-              ),
-              onTap: () => _showDetails(context, e),
-            ),
-          );
-        },
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListTile(
+                        title: Text(e.name),
+                        subtitle: Text(
+                          e.yearKnown
+                              ? (d == 0
+                                  ? s.todayTurns(age)
+                                  : s.inDaysTurns(d, age))
+                              : (d == 0 ? s.today : s.inDays(d)),
+                        ),
+                        onTap: () => _showDetails(context, e),
+                      ),
+                    );
+                  },
+                ),
       ),
+      // Der Knopf fliegt beim Seitenwechsel von selbst zur Mitte der Hauptseite
       floatingActionButton: FloatingActionButton(
+        onPressed: () => _openSearch(s),
         child: const Icon(Icons.search),
-        onPressed: () {
-          showSearch(
-            context: context,
-            delegate: BirthdaySearchDelegate(
-              entries: widget.entries,
-              onSelect: (e) => _showDetails(context, e),
-            ),
-          );
-        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -459,36 +586,30 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
 // -------------------
 // Sortier-Optionen
 // -------------------
-enum SortOption {
-  name,
-  birthdayYear,
-  recentlyAdded,
-  upcomingFromToday,
-}
+enum SortOption { name, birthdayYear, recentlyAdded, upcomingFromToday }
 
 // -------------------
 // Suchfunktion
 // -------------------
 class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
   final List<BirthdayEntry> entries;
+  final AppStrings labels;
   final void Function(BirthdayEntry) onSelect;
 
   BirthdaySearchDelegate({
     required this.entries,
+    required this.labels,
     required this.onSelect,
   });
 
   @override
-  String get searchFieldLabel => 'Search Name';
+  String get searchFieldLabel => labels.searchName;
 
   @override
   List<Widget>? buildActions(BuildContext context) {
     return [
       if (query.isNotEmpty)
-        IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () => query = '',
-        ),
+        IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
     ];
   }
 
@@ -502,9 +623,10 @@ class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
 
   @override
   Widget buildResults(BuildContext context) {
-    final results = entries
-        .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+    final results =
+        entries
+            .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
     return _buildList(context, results);
   }
 
@@ -515,22 +637,23 @@ class BirthdaySearchDelegate extends SearchDelegate<BirthdayEntry?> {
         child: Text(' ', style: TextStyle(color: Colors.grey)),
       );
     }
-    final suggestions = entries
-        .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+    final suggestions =
+        entries
+            .where((e) => e.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
     return _buildList(context, suggestions);
   }
 
   Widget _buildList(BuildContext context, List<BirthdayEntry> list) {
-    if (list.isEmpty) return const Center(child: Text('No results'));
+    if (list.isEmpty) return Center(child: Text(labels.noResults));
 
-    return ListView.builder(
+    return StretchListView.builder(
       itemCount: list.length,
       itemBuilder: (context, i) {
         final e = list[i];
         return ListTile(
           title: Text(e.name),
-          subtitle: Text('${e.birthday.day}.${e.birthday.month}.${e.birthday.year}'),
+          subtitle: Text(e.formattedDate),
           onTap: () {
             close(context, e);
             onSelect(e);

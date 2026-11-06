@@ -1,24 +1,31 @@
 /* =========================
    Home Page
 ========================= */
-import 'dart:convert';
+import 'package:BirthdayMarker/birthdayPicker.dart';
+import 'package:BirthdayMarker/calendarWidget.dart';
+import 'package:BirthdayMarker/l10n/appStrings.dart';
+import 'package:BirthdayMarker/services/appSettings.dart';
+import 'package:BirthdayMarker/services/birthdayStore.dart';
+import 'package:BirthdayMarker/services/notificationService.dart';
 import 'package:BirthdayMarker/settings.dart';
 import 'package:BirthdayMarker/list.dart';
 import 'package:BirthdayMarker/main.dart';
+import 'package:BirthdayMarker/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BirthdayHomePage extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
   final ValueNotifier<Locale> localeNotifier;
   final ValueNotifier<Color> accentColorNotifier;
+  final ValueNotifier<bool> amoledNotifier;
 
   const BirthdayHomePage({
     super.key,
     required this.themeNotifier,
     required this.localeNotifier,
     required this.accentColorNotifier,
+    required this.amoledNotifier,
   });
 
   @override
@@ -26,84 +33,115 @@ class BirthdayHomePage extends StatefulWidget {
 }
 
 class _BirthdayHomePageState extends State<BirthdayHomePage> {
-  final List<BirthdayEntry> entries = [];
-  static const String _storageKey = 'birthday_entries';
+  final BirthdayStore _store = BirthdayStore.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadEntries();
-  }
-
-  // -------------------
-  // Laden & Speichern
-  // -------------------
-
-  Future<void> _loadEntries() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_storageKey);
-    if (jsonString != null) {
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      setState(() {
-        entries.clear();
-        entries.addAll(jsonList.map((e) => BirthdayEntry.fromJson(e as Map<String, dynamic>)));
-      });
-    }
-  }
-
-  Future<void> _saveEntries() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = jsonEncode(entries.map((e) => e.toJson()).toList());
-    await prefs.setString(_storageKey, jsonString);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openStartPage();
+      if (AppSettings.instance.notificationsEnabled) {
+        NotificationService.instance.requestPermission();
+      }
+    });
   }
 
   // -------------------
   // Hilfsfunktionen
   // -------------------
 
+  void _openStartPage() {
+    final builder = switch (AppSettings.instance.startPage) {
+      StartPage.home => null,
+      StartPage.list => _buildListPage,
+      StartPage.calendar => _buildCalendarPage,
+      StartPage.settings => _buildSettingsPage,
+    };
+    if (builder == null) return;
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (context, _, __) => builder(context),
+      ),
+    );
+  }
+
+  void _openPage(WidgetBuilder builder) {
+    Navigator.push(context, MaterialPageRoute(builder: builder));
+  }
+
+  Widget _buildListPage(BuildContext context) => BirthdayListPage(
+    entries: _store.entries,
+    nextAge: nextAge,
+    daysUntil: daysUntil,
+    onUpdate: _store.save,
+    onOpenCalendar: () => _openPage(_buildCalendarPage),
+  );
+
+  Widget _buildCalendarPage(BuildContext context) =>
+      BirthdayCalendarPage(entries: _store.entries);
+
+  Widget _buildSettingsPage(BuildContext context) => SettingsPage(
+    themeNotifier: widget.themeNotifier,
+    localeNotifier: widget.localeNotifier,
+    accentColorNotifier: widget.accentColorNotifier,
+    amoledNotifier: widget.amoledNotifier,
+  );
+
   int nextAge(DateTime birthday) {
-    final now = DateTime.now();
-    int age = now.year - birthday.year;
-    final bThisYear = DateTime(now.year, birthday.month, birthday.day);
-    return now.isBefore(bThisYear) ? age : age + 1;
+    final today = DateUtils.dateOnly(DateTime.now());
+    int age = today.year - birthday.year;
+    final bThisYear = DateTime(today.year, birthday.month, birthday.day);
+    return today.isAfter(bThisYear) ? age + 1 : age;
   }
 
   int daysUntil(DateTime birthday) {
-    final now = DateTime.now();
-    DateTime next = DateTime(now.year, birthday.month, birthday.day);
-    if (next.isBefore(now)) next = DateTime(now.year + 1, birthday.month, birthday.day);
-    return next.difference(now).inDays;
+    final today = DateUtils.dateOnly(DateTime.now());
+    DateTime next = DateTime(today.year, birthday.month, birthday.day);
+    if (next.isBefore(today))
+      next = DateTime(today.year + 1, birthday.month, birthday.day);
+    // Über UTC gerechnet, damit Zeitumstellungen keinen Tag verschlucken
+    return DateTime.utc(
+      next.year,
+      next.month,
+      next.day,
+    ).difference(DateTime.utc(today.year, today.month, today.day)).inDays;
   }
 
   Future<bool> _onWillPop() async {
     final shouldExit = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.exit_to_app,
-              color: Theme.of(context).colorScheme.primary,
+      builder: (context) {
+        final s = AppStrings.of(context);
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.exit_to_app,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(s.exitTitle)),
+            ],
+          ),
+          content: Text(s.exitMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(s.no),
             ),
-            const SizedBox(width: 12),
-            const Text('Exit BirthdayMarker'),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(s.yes),
+            ),
           ],
-        ),
-        content: const Text('Are you sure you want to close the application?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (shouldExit == true) {
@@ -116,68 +154,89 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
   void _addEntryDialog() {
     final nameCtrl = TextEditingController();
     DateTime? birthday;
-    TimeOfDay? time;
+    TimeOfDay time = AppSettings.instance.defaultNotificationTime;
+    bool yearKnown = true;
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setD) => AlertDialog(
-          title: const Text('Add Birthday'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime(2027),
-                  );
-                  if (d != null) setD(() => birthday = d);
-                },
-                child: Text(birthday == null
-                    ? 'Choose Birthday'
-                    : '${birthday!.day}.${birthday!.month}.${birthday!.year}'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final t = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.now(),
-                  );
-                  if (t != null) setD(() => time = t);
-                },
-                child: Text(time == null ? 'Time of Reminder' : time!.format(context)),
-              ),
-            ],
+      builder:
+          (_) => StatefulBuilder(
+            builder: (dialogContext, setD) {
+              final s = AppStrings.of(dialogContext);
+              return AlertDialog(
+                title: Text(s.addBirthday),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: InputDecoration(labelText: s.name),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final pick = await showBirthdayPicker(
+                          dialogContext,
+                          initialDate: birthday,
+                          yearKnown: yearKnown,
+                        );
+                        if (pick != null) {
+                          setD(() {
+                            birthday = pick.date;
+                            yearKnown = pick.yearKnown;
+                          });
+                        }
+                      },
+                      child: Text(
+                        birthday == null
+                            ? s.chooseBirthday
+                            : AppSettings.instance.formatDate(
+                              birthday!,
+                              withYear: yearKnown,
+                            ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final t = await showTimePicker(
+                          context: dialogContext,
+                          initialTime: time,
+                        );
+                        if (t != null) setD(() => time = t);
+                      },
+                      child: Text(s.reminderAt(time.format(dialogContext))),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(s.cancel),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (nameCtrl.text.isEmpty || birthday == null) return;
+                      _store.entries.add(
+                        BirthdayEntry(
+                          name: nameCtrl.text,
+                          birthday:
+                              yearKnown
+                                  ? birthday!
+                                  : BirthdayEntry.unknownYearDate(birthday!),
+                          notificationTime: time,
+                          yearKnown: yearKnown,
+                        ),
+                      );
+                      _store.save();
+                      Navigator.pop(dialogContext);
+                      showFeedback(context, s.entrySaved(nameCtrl.text));
+                    },
+                    child: Text(s.save),
+                  ),
+                ],
+              );
+            },
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () {
-                if (nameCtrl.text.isNotEmpty && birthday != null && time != null) {
-                  setState(() {
-                    entries.add(BirthdayEntry(
-                      name: nameCtrl.text,
-                      birthday: birthday!,
-                      notificationTime: time!,
-                    ));
-                  });
-                  _saveEntries();
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -185,10 +244,8 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
-        if (!didPop) {
-          await _onWillPop();
-        }
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _onWillPop();
       },
       child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -197,43 +254,16 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
           child: const Icon(Icons.add),
         ),
         bottomNavigationBar: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
                 icon: const Icon(Icons.list),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BirthdayListPage(
-                        entries: entries,
-                        nextAge: nextAge,
-                        daysUntil: daysUntil,
-                        onUpdate: () {
-                          setState(() {});
-                          _saveEntries();
-                        },
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _openPage(_buildListPage),
               ),
               IconButton(
                 icon: const Icon(Icons.settings),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SettingsPage(
-                        themeNotifier: widget.themeNotifier,
-                        localeNotifier: widget.localeNotifier,
-                        accentColorNotifier: widget.accentColorNotifier,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _openPage(_buildSettingsPage),
               ),
             ],
           ),

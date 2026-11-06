@@ -1,24 +1,20 @@
-/* import 'package:flutter/material.dart';
+import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/main.dart';
+import 'package:BirthdayMarker/stretchListView.dart';
+import 'package:flutter/material.dart';
 
 /* =========================
    Kalender Page
 ========================= */
-class BirthdayCalendarWidget extends StatelessWidget {
+class BirthdayCalendarPage extends StatelessWidget {
   final List<BirthdayEntry> entries;
-  const BirthdayCalendarWidget({super.key, required this.entries});
-
-  String shortDate(DateTime d) {
-    const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-    final wd = weekdays[d.weekday - 1];
-    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year % 100} $wd';
-  }
+  const BirthdayCalendarPage({super.key, required this.entries});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
-      body: BirthdayCalendar(entries: entries, shortDate: shortDate),
+      appBar: AppBar(title: Text(AppStrings.of(context).calendar)),
+      body: BirthdayCalendar(entries: entries),
     );
   }
 }
@@ -28,13 +24,34 @@ class BirthdayCalendarWidget extends StatelessWidget {
 ========================= */
 class BirthdayCalendar extends StatefulWidget {
   final List<BirthdayEntry> entries;
-  final String Function(DateTime) shortDate;
 
-  const BirthdayCalendar({
-    super.key,
-    required this.entries,
-    required this.shortDate,
-  });
+  const BirthdayCalendar({super.key, required this.entries});
+
+  // Die 42 Tage der Monatsansicht, beginnend mit dem Montag der ersten Woche.
+  // Über Kalendertage gerechnet, damit Zeitumstellungen keinen Tag doppeln.
+  static List<DateTime> gridDays(DateTime month) {
+    final first = DateTime(month.year, month.month, 1);
+    return List.generate(
+      42,
+      (i) => DateTime(first.year, first.month, 1 - (first.weekday - 1) + i),
+    );
+  }
+
+  // Wer am 29. Februar geboren ist, erscheint sonst am 28., wie bei der
+  // Erinnerung. Tage vor der Geburt bleiben leer.
+  @visibleForTesting
+  static List<BirthdayEntry> birthdaysOn(
+    List<BirthdayEntry> entries,
+    DateTime day,
+  ) {
+    return entries.where((e) {
+      if (e.yearKnown && day.year < e.birthday.year) return false;
+      if (e.birthday.month != day.month) return false;
+      final lastDay = DateUtils.getDaysInMonth(day.year, day.month);
+      final birthdayDay = e.birthday.day > lastDay ? lastDay : e.birthday.day;
+      return birthdayDay == day.day;
+    }).toList();
+  }
 
   @override
   State<BirthdayCalendar> createState() => _BirthdayCalendarState();
@@ -44,214 +61,215 @@ class _BirthdayCalendarState extends State<BirthdayCalendar> {
   DateTime month = DateTime.now();
   DateTime? selectedDay;
 
-  int nextAge(DateTime birthday) {
-    if (selectedDay == null) return 0;
-    int age = selectedDay!.year - birthday.year;
-    final bThisYear =
-        DateTime(selectedDay!.year, birthday.month, birthday.day);
-    return selectedDay!.isBefore(bThisYear) ? age : age + 1;
+  // Richtung des letzten Monatswechsels, für die Schiebe-Animation
+  int _direction = 1;
+
+  void _changeMonth(int delta) {
+    _direction = delta;
+    setState(() {
+      month = DateTime(month.year, month.month + delta);
+      selectedDay = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final first = DateTime(month.year, month.month, 1);
-    final days = DateTime(month.year, month.month + 1, 0).day;
-    final offset = first.weekday - 1;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final s = AppStrings.of(context);
+    final colors = Theme.of(context).colorScheme;
+    final today = DateUtils.dateOnly(DateTime.now());
+    final days = BirthdayCalendar.gridDays(month);
+    final birthdaysOnSelectedDay =
+        selectedDay == null
+            ? const <BirthdayEntry>[]
+            : BirthdayCalendar.birthdaysOn(widget.entries, selectedDay!);
 
-    return Column(
+    return StretchListView(
+      padding: const EdgeInsets.all(16),
       children: [
-        // -------------------
-        // Monatsnavigation
-        // -------------------
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () =>
-                  setState(() => month = DateTime(month.year, month.month - 1)),
-            ),
-            Text(
-              '${month.month}/${month.year}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () =>
-                  setState(() => month = DateTime(month.year, month.month + 1)),
-            ),
-          ],
-        ),
+        GestureDetector(
+          onHorizontalDragEnd: (details) {
+            final velocity = details.primaryVelocity ?? 0;
+            if (velocity > 200) _changeMonth(-1);
+            if (velocity < -200) _changeMonth(1);
+          },
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                children: [
+                  // -------------------
+                  // Monatsnavigation
+                  // -------------------
+                  Row(
+                    children: <Widget>[
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: () => _changeMonth(-1),
+                      ),
+                      Expanded(
+                        child: Text(
+                          MaterialLocalizations.of(
+                            context,
+                          ).formatMonthYear(month),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: () => _changeMonth(1),
+                      ),
+                    ],
+                  ),
 
-        // -------------------
-        // Wochentags-Header
-        // -------------------
-        Row(
-          children: const ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
-              .map(
-                (d) => Expanded(
-                  child: Center(
-                    child: Text(
-                      d,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.black,
+                  // -------------------
+                  // Wochentags-Header
+                  // -------------------
+                  Row(
+                    children:
+                        s.weekdays
+                            .map(
+                              (d) => Expanded(
+                                child: Center(
+                                  child: Text(
+                                    d,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // -------------------
+                  // Kalender Grid
+                  // -------------------
+                  ClipRect(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) {
+                        final incoming = child.key == ValueKey(month);
+                        final offset = Tween<Offset>(
+                          begin: Offset(
+                            incoming
+                                ? _direction.toDouble()
+                                : -_direction.toDouble(),
+                            0,
+                          ),
+                          end: Offset.zero,
+                        ).animate(animation);
+                        return SlideTransition(position: offset, child: child);
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey(month),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 7,
+                                childAspectRatio: 0.9,
+                              ),
+                          itemCount: days.length,
+                          itemBuilder: (_, i) {
+                            final day = days[i];
+                            final isCurrentMonth = day.month == month.month;
+                            final isSelected = day == selectedDay;
+                            final birthdays = BirthdayCalendar.birthdaysOn(
+                              widget.entries,
+                              day,
+                            );
+                            final textColor =
+                                isCurrentMonth ? colors.onSurface : Colors.grey;
+
+                            return GestureDetector(
+                              onTap:
+                                  birthdays.isNotEmpty
+                                      ? () => setState(() => selectedDay = day)
+                                      : null,
+                              child: Container(
+                                margin: const EdgeInsets.all(2),
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color:
+                                      isSelected
+                                          ? colors.primary.withValues(
+                                            alpha: 0.3,
+                                          )
+                                          : null,
+                                  border:
+                                      day == today
+                                          ? Border.all(
+                                            color: colors.primary,
+                                            width: 2,
+                                          )
+                                          : null,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Große Systemschrift darf nicht aus der Zelle laufen
+                                    Flexible(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          '${day.day}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (birthdays.isNotEmpty)
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.only(top: 2),
+                                        decoration: BoxDecoration(
+                                          color: colors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 4),
-
-        // -------------------
-        // Kalender Grid (FIXE HÖHE)
-        // -------------------
-        SizedBox(
-          height: 280, // <- reduzierte Höhe
-          child: GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
+                ],
+              ),
             ),
-            itemCount: 42,
-            itemBuilder: (_, i) {
-              final firstOfMonth = DateTime(month.year, month.month, 1);
-              final startDay = firstOfMonth
-                  .subtract(Duration(days: firstOfMonth.weekday - 1));
-              final day = startDay.add(Duration(days: i));
-              final isCurrentMonth = day.month == month.month;
-
-              final birthdays = widget.entries.where(
-                (e) =>
-                    e.birthday.day == day.day &&
-                    e.birthday.month == day.month,
-              ).toList();
-
-              final textColor = isCurrentMonth
-                  ? (isDarkMode ? Colors.white : Colors.black)
-                  : Colors.grey;
-
-              return GestureDetector(
-                onTap: birthdays.isNotEmpty
-                    ? () {
-                        setState(() {
-                          selectedDay = day;
-                        });
-                      }
-                    : null,
-                child: Container(
-                  margin: const EdgeInsets.all(4),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: birthdays.isNotEmpty
-                        ? Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.3)
-                        : null,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                      if (birthdays.isNotEmpty)
-                        Flexible(
-                          child: Text(
-                            widget.shortDate(day),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: textColor,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
           ),
         ),
 
         // -------------------
         // Geburtstagsliste UNTER dem Kalender
         // -------------------
-        if (selectedDay != null)
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color:
-                        isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
+        for (final e in birthdaysOnSelectedDay)
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ListTile(
+              title: Text(e.name),
+              subtitle: Text(
+                e.yearKnown
+                    ? s.turnsAge(selectedDay!.year - e.birthday.year)
+                    : s.hasBirthday,
               ),
-              child: widget.entries
-                      .where(
-                        (e) =>
-                            e.birthday.day == selectedDay!.day &&
-                            e.birthday.month == selectedDay!.month,
-                      )
-                      .isEmpty
-                  ? Center(
-                      child: Text(
-                        'No birthdays on ${selectedDay!.day}.${selectedDay!.month}.${selectedDay!.year}',
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: widget.entries
-                          .where(
-                            (e) =>
-                                e.birthday.day == selectedDay!.day &&
-                                e.birthday.month == selectedDay!.month,
-                          )
-                          .length,
-                      itemBuilder: (context, index) {
-                        final birthdaysOnDay = widget.entries
-                            .where(
-                              (e) =>
-                                  e.birthday.day == selectedDay!.day &&
-                                  e.birthday.month == selectedDay!.month,
-                            )
-                            .toList();
-                        final e = birthdaysOnDay[index];
-                        final age = nextAge(e.birthday);
-
-                        return Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            title:
-                                Text('${e.name} becomes $age years old'),
-                          ),
-                        );
-                      },
-                    ),
             ),
           ),
       ],
     );
   }
 }
-*/

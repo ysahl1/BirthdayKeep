@@ -1,6 +1,6 @@
 {
-    "name": "birthdaymarker",
-    "short_name": "birthdaymarker",
+    "name": "BirthdayKeep",
+    "short_name": "BirthdayKeep",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,0 +1,17 @@
+BirthdayKeep is a simple birthday reminder that keeps everything on your device. No account, no tracking, no cloud.
+
+<b>Features</b>
+<ul>
+<li>List of all birthdays with age and days remaining, sortable and searchable</li>
+<li>Calendar view of the month</li>
+<li>Reminders on the day and up to 14 days in advance, with a time per person</li>
+<li>Exclude individual people from reminders</li>
+<li>Birth year optional</li>
+<li>App lock with device PIN, fingerprint or Face ID</li>
+<li>Export as TXT or PDF, plus backup and restore</li>
+<li>Light and dark mode, theme colors, German and English</li>
+<li>Choice of date format and start page</li>
+</ul>
+
+<b>Privacy</b>
+All birthdays stay on your device. The app has no internet permission of its own and contains no analytics or ads. Exported files and backups are not encrypted, so keep them somewhere safe.

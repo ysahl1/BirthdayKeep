@@ -1,0 +1,17 @@
+BirthdayKeep ist eine einfache Geburtstags-Erinnerung, bei der alles auf deinem Gerät bleibt. Kein Konto, kein Tracking, keine Cloud.
+
+<b>Funktionen</b>
+<ul>
+<li>Liste aller Geburtstage mit Alter und verbleibenden Tagen, sortier- und durchsuchbar</li>
+<li>Kalenderansicht des Monats</li>
+<li>Erinnerungen am Tag selbst und bis zu 14 Tage vorher, mit Uhrzeit pro Person</li>
+<li>Einzelne Personen von Erinnerungen ausschließen</li>
+<li>Geburtsjahr optional</li>
+<li>App-Sperre mit Geräte-PIN, Fingerabdruck oder Face ID</li>
+<li>Export als TXT oder PDF, dazu Backup und Wiederherstellung</li>
+<li>Heller und dunkler Modus, Designfarben, Deutsch und Englisch</li>
+<li>Datumsformat und Startseite frei wählbar</li>
+</ul>
+
+<b>Datenschutz</b>
+Alle Geburtstage bleiben auf deinem Gerät. Die App fordert selbst keinen Internetzugriff an und enthält weder Analyse noch Werbung. Exporte und Backups sind nicht verschlüsselt, bewahre sie also sicher auf.
