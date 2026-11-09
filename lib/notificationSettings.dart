@@ -1,6 +1,7 @@
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/services/appSettings.dart';
 import 'package:BirthdayMarker/services/birthdayStore.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/services/notificationService.dart';
 import 'package:BirthdayMarker/stretchListView.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +101,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                         groupValue: _settings.dateStyle,
                         onChanged: (value) {
                           setState(() => _settings.dateStyle = value!);
+                          HomeIntegration.instance.refreshWidgets();
                           Navigator.pop(context);
                         },
                       );

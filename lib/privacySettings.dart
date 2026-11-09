@@ -113,6 +113,48 @@ class privacySettingsState extends State<BirthdayPrivacySettings> {
     }
   }
 
+  Future<void> _importTextFile() async {
+    final s = AppStrings.of(context);
+    final content = await ExportService.pickTextFile();
+    if (content == null) return;
+    final result = ExportService.parseTextImport(
+      content,
+      _store.entries,
+      DateTime.now(),
+    );
+    if (!mounted) return;
+    if (result.entries.isEmpty) {
+      _showMessage(s.importNothing, type: FeedbackType.error);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(s.importText),
+            content: Text(
+              s.importConfirm(result.entries.length, result.skipped),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(s.cancel),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(s.importAdd),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true) return;
+
+    _store.entries.addAll(result.entries);
+    await _store.save();
+    _showMessage(s.imported(result.entries.length));
+  }
+
   Future<void> _restoreBackup() async {
     final s = AppStrings.of(context);
     try {
@@ -205,6 +247,14 @@ class privacySettingsState extends State<BirthdayPrivacySettings> {
               title: Text(s.backupRestore),
               subtitle: Text(s.backupRestoreHint),
               onTap: _restoreBackup,
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.playlist_add_rounded),
+              title: Text(s.importText),
+              subtitle: Text(s.importTextHint),
+              onTap: _importTextFile,
             ),
           ),
         ],

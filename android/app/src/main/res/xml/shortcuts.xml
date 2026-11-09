@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="add" android:enabled="true" android:icon="@drawable/ic_shortcut_add" android:shortcutShortLabel="@string/shortcut_add">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.ysahl1.birthdaykeep" android:targetClass="com.ysahl1.birthdaykeep.MainActivity">
+            <extra android:name="birthdaykeep_action" android:value="add"/>
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="search" android:enabled="true" android:icon="@drawable/ic_shortcut_search" android:shortcutShortLabel="@string/shortcut_search">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.ysahl1.birthdaykeep" android:targetClass="com.ysahl1.birthdaykeep.MainActivity">
+            <extra android:name="birthdaykeep_action" android:value="search"/>
+        </intent>
+    </shortcut>
+</shortcuts>

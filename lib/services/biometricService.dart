@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/services/appSettings.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -90,6 +91,8 @@ class BiometricService {
       await prefs.remove(_pinSaltKey);
     }
     await applyScreenProtection();
+    // Widgets zeigen bei aktiver Sperre keine Namen
+    await HomeIntegration.instance.refreshWidgets();
   }
 
   // Bei aktiver Sperre bleibt der Inhalt auf Screenshots und in der

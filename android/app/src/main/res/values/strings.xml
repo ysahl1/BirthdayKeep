@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BirthdayKeep</string>
+    <string name="tile_list">Birthdays</string>
+    <string name="tile_add">New Birthday</string>
+    <string name="shortcut_add">New Birthday</string>
+    <string name="shortcut_search">Search Person</string>
+    <string name="widget_small_name">Next birthdays</string>
+    <string name="widget_wide_name">Next birthdays (wide)</string>
+    <string name="widget_description">Shows the next birthdays</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_tomorrow">Tomorrow</string>
+    <string name="widget_in_days">In %1$d days</string>
+    <string name="widget_empty">No entries yet</string>
+    <string name="widget_locked">App is locked</string>
 </resources>

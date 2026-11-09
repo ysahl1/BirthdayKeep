@@ -1,0 +1,1 @@
+Favorites in the list, import birthdays from a text file, home screen widgets (2x2 and 4x2), Quick Settings tiles and app shortcuts for adding and searching. Also: AMOLED mode, month headers, calendar swipe, number PIN with scrambled digits, optional birth year.

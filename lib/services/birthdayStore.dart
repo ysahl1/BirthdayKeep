@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:BirthdayMarker/main.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/services/notificationService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +30,7 @@ class BirthdayStore {
     final jsonString = jsonEncode(entries.map((e) => e.toJson()).toList());
     await prefs.setString(_storageKey, jsonString);
     await NotificationService.instance.reschedule();
+    await HomeIntegration.instance.refreshWidgets();
   }
 
   Future<void> replaceAll(List<BirthdayEntry> newEntries) async {

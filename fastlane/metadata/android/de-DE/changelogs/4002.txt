@@ -1,0 +1,1 @@
+Favoriten in der Liste, Geburtstage aus Textdatei importieren, Widgets (2x2 und 4x2), Kacheln im Kontrollzentrum und App-Shortcuts zum Hinzufügen und Suchen. Außerdem: AMOLED-Modus, Monats-Überschriften, Kalender wischen, Zahlen-PIN mit gemischten Ziffern, Geburtsjahr optional.

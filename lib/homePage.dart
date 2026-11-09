@@ -6,6 +6,7 @@ import 'package:BirthdayMarker/calendarWidget.dart';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/services/appSettings.dart';
 import 'package:BirthdayMarker/services/birthdayStore.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/services/notificationService.dart';
 import 'package:BirthdayMarker/settings.dart';
 import 'package:BirthdayMarker/list.dart';
@@ -38,8 +39,16 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _openStartPage();
+    HomeIntegration.instance.listen(_handleAction);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Von Widget, Kachel oder App-Shortcut gestartet: dorthin statt zur Startseite
+      final action = await HomeIntegration.instance.takePendingAction();
+      if (!mounted) return;
+      if (action != null) {
+        _handleAction(action);
+      } else {
+        _openStartPage();
+      }
       if (AppSettings.instance.notificationsEnabled) {
         NotificationService.instance.requestPermission();
       }
@@ -49,6 +58,20 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
   // -------------------
   // Hilfsfunktionen
   // -------------------
+
+  void _handleAction(String action) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    switch (action) {
+      case 'list':
+        _openPage(_buildListPage);
+      case 'add':
+        _addEntryDialog();
+      case 'search':
+        _openPage(
+          (context) => _buildListPage(context, openSearchOnStart: true),
+        );
+    }
+  }
 
   void _openStartPage() {
     final builder = switch (AppSettings.instance.startPage) {
@@ -72,7 +95,11 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
     Navigator.push(context, MaterialPageRoute(builder: builder));
   }
 
-  Widget _buildListPage(BuildContext context) => BirthdayListPage(
+  Widget _buildListPage(
+    BuildContext context, {
+    bool openSearchOnStart = false,
+  }) => BirthdayListPage(
+    openSearchOnStart: openSearchOnStart,
     entries: _store.entries,
     nextAge: nextAge,
     daysUntil: daysUntil,

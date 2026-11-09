@@ -718,6 +718,116 @@ void main() {
     });
   });
 
+  group('Favoriten', () {
+    test('bleiben im Backup erhalten', () {
+      final entry = _entry('Anna', DateTime(1990, 5, 1))..favorite = true;
+      expect(
+        ExportService.parseBackup(
+          ExportService.buildBackup([entry]),
+        ).single.favorite,
+        isTrue,
+      );
+    });
+
+    test('alte Einträge sind keine Favoriten', () {
+      expect(
+        BirthdayEntry.fromJson({
+          'name': 'Alt',
+          'birthday': '1990-05-01T00:00:00.000',
+          'notificationHour': 8,
+          'notificationMinute': 30,
+        }).favorite,
+        isFalse,
+      );
+    });
+
+    testWidgets('Stern am Ende der Kachel schaltet um', (tester) async {
+      final entry = _entry('Anna', DateTime(1990, 5, 1));
+      var updates = 0;
+      await tester.pumpWidget(
+        _localized(
+          BirthdayListPage(
+            entries: [entry],
+            nextAge: (_) => 30,
+            daysUntil: (_) => 10,
+            onUpdate: () => updates++,
+            onOpenCalendar: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final star = find.byIcon(Icons.star_outline_rounded);
+      expect(
+        tester.getCenter(star).dx,
+        greaterThan(tester.getCenter(find.text('Anna')).dx),
+      );
+      await tester.tap(star);
+      await tester.pump();
+      expect(entry.favorite, isTrue);
+      expect(updates, 1);
+      expect(find.byIcon(Icons.star_rounded), findsOneWidget);
+    });
+  });
+
+  group('Import aus Textdatei', () {
+    final now = DateTime(2026, 11, 9);
+    ({List<BirthdayEntry> entries, int skipped}) parse(
+      String text, [
+      List<BirthdayEntry> existing = const [],
+    ]) => ExportService.parseTextImport(text, existing, now);
+
+    test('liest die gängigen Schreibweisen', () {
+      final result = parse(
+        'Anna: 01/12/2001\n'
+        'Ben, 24.12.1990\n'
+        'Clara;2000-02-29\n'
+        'Anna-Lena Müller 5-6-99\n',
+      );
+      expect(result.skipped, 0);
+      expect(result.entries.map((e) => e.name), [
+        'Anna',
+        'Ben',
+        'Clara',
+        'Anna-Lena Müller',
+      ]);
+      expect(result.entries[0].birthday, DateTime(2001, 12, 1));
+      expect(result.entries[2].birthday, DateTime(2000, 2, 29));
+      expect(result.entries[3].birthday, DateTime(1999, 6, 5));
+    });
+
+    test('ohne Jahr wird als unbekanntes Jahr gespeichert', () {
+      final e = parse('Paul: 03.03.').entries.single;
+      expect(e.yearKnown, isFalse);
+      expect(e.birthday, DateTime(2000, 3, 3));
+    });
+
+    test('Monat zuerst gilt beim passenden Datumsformat', () {
+      AppSettings.instance.dateStyle = DateStyle.monthDayYearSlash;
+      expect(
+        parse('Anna: 01/12/2001').entries.single.birthday,
+        DateTime(2001, 1, 12),
+      );
+    });
+
+    test('unbrauchbare Zeilen, Zukunft und Doppelte werden übersprungen', () {
+      final result = parse(
+        'BirthdayKeep - Geburtstage\n\nAnna: 32/01/2001\nBen: 01/01/2030\nClara: 01/02/2000\n',
+        [_entry('clara', DateTime(1995, 2, 1))],
+      );
+      expect(result.entries, isEmpty);
+      expect(result.skipped, 4);
+    });
+
+    test('der eigene TXT-Export lässt sich wieder einlesen', () {
+      final text = ExportService.buildText([
+        _entry('Änne', DateTime(1991, 12, 24)),
+      ], AppStrings.forLocale(const Locale('de')));
+      final result = parse(text);
+      expect(result.entries.single.name, 'Änne');
+      expect(result.entries.single.birthday, DateTime(1991, 12, 24));
+    });
+  });
+
   group('Datumsformat', () {
     final date = DateTime(2026, 1, 15);
 

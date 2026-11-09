@@ -16,6 +16,7 @@ class BirthdayListPage extends StatefulWidget {
   final int Function(DateTime) daysUntil;
   final VoidCallback onUpdate;
   final VoidCallback onOpenCalendar;
+  final bool openSearchOnStart;
 
   const BirthdayListPage({
     super.key,
@@ -24,6 +25,7 @@ class BirthdayListPage extends StatefulWidget {
     required this.daysUntil,
     required this.onUpdate,
     required this.onOpenCalendar,
+    this.openSearchOnStart = false,
   });
 
   @override
@@ -38,6 +40,11 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   void initState() {
     super.initState();
     _loadSortSettings();
+    if (widget.openSearchOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openSearch(AppStrings.of(context));
+      });
+    }
   }
 
   void _notifyUpdate() {
@@ -566,6 +573,22 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                                   ? s.todayTurns(age)
                                   : s.inDaysTurns(d, age))
                               : (d == 0 ? s.today : s.inDays(d)),
+                        ),
+                        trailing: IconButton(
+                          tooltip: s.favorite,
+                          icon: Icon(
+                            e.favorite
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color:
+                                e.favorite
+                                    ? Theme.of(context).colorScheme.primary
+                                    : null,
+                          ),
+                          onPressed: () {
+                            e.favorite = !e.favorite;
+                            _notifyUpdate();
+                          },
                         ),
                         onTap: () => _showDetails(context, e),
                       ),

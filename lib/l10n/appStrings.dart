@@ -51,6 +51,7 @@ class AppStrings {
       days == 1
           ? _t('Morgen ($age)', 'Tomorrow ($age)')
           : _t('In $days Tagen ($age)', 'In $days days ($age)');
+  String get favorite => _t('Favorit', 'Favorite');
   String get today => _t('Heute', 'Today');
   String inDays(int days) =>
       days == 1
@@ -186,6 +187,23 @@ class AppStrings {
   String backupRestoreConfirm(int count) => _t(
     'Das Backup enthält $count Einträge. Die aktuelle Liste wird dabei ersetzt.',
     'The backup contains $count entries. This replaces your current list.',
+  );
+  String get importText =>
+      _t('Aus Textdatei importieren', 'Import from Text File');
+  String get importTextHint => _t(
+    'Eine Zeile pro Person, z. B. Anna: 01/12/2001',
+    'One line per person, e.g. Anna: 01/12/2001',
+  );
+  String importConfirm(int found, int skipped) => _t(
+    '$found Geburtstage gefunden, $skipped Zeilen übersprungen.',
+    'Found $found birthdays, skipped $skipped lines.',
+  );
+  String get importAdd => _t('Hinzufügen', 'Add');
+  String imported(int count) =>
+      _t('$count Geburtstage hinzugefügt', 'Added $count birthdays');
+  String get importNothing => _t(
+    'Keine neuen Geburtstage in der Datei gefunden',
+    'No new birthdays found in the file',
   );
   String get restore => _t('Wiederherstellen', 'Restore');
   String get saved => _t('Datei gespeichert', 'File saved');

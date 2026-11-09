@@ -3,6 +3,7 @@ import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/services/appSettings.dart';
 import 'package:BirthdayMarker/services/biometricService.dart';
 import 'package:BirthdayMarker/services/birthdayStore.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/services/notificationService.dart';
 import 'package:BirthdayMarker/screens/authLockScreen.dart';
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
@@ -17,6 +18,7 @@ Future<void> main() async {
   await BiometricService().applyScreenProtection();
   runApp(BirthdayMarkerApp());
   NotificationService.instance.reschedule();
+  HomeIntegration.instance.refreshWidgets();
 }
 
 class BirthdayEntry {
@@ -25,6 +27,7 @@ class BirthdayEntry {
   TimeOfDay notificationTime;
   bool notificationsEnabled;
   bool yearKnown;
+  bool favorite;
 
   BirthdayEntry({
     required this.name,
@@ -32,6 +35,7 @@ class BirthdayEntry {
     required this.notificationTime,
     this.notificationsEnabled = true,
     this.yearKnown = true,
+    this.favorite = false,
   });
 
   // Ohne bekanntes Jahr zählt nur Tag und Monat. Das Schaltjahr 2000 erhält
@@ -49,6 +53,7 @@ class BirthdayEntry {
     'notificationMinute': notificationTime.minute,
     'notificationsEnabled': notificationsEnabled,
     'yearKnown': yearKnown,
+    'favorite': favorite,
   };
 
   factory BirthdayEntry.fromJson(Map<String, dynamic> json) {
@@ -61,6 +66,7 @@ class BirthdayEntry {
       ),
       notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
       yearKnown: json['yearKnown'] as bool? ?? true,
+      favorite: json['favorite'] as bool? ?? false,
     );
   }
 }
@@ -104,6 +110,7 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
       _settings.locale = localeNotifier.value;
       // Bereits geplante Erinnerungen sollen in der neuen Sprache erscheinen
       NotificationService.instance.reschedule();
+      HomeIntegration.instance.refreshWidgets();
     });
     _checkAuthentication();
   }

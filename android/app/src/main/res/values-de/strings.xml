@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_list">Geburtstage</string>
+    <string name="tile_add">Neuer Geburtstag</string>
+    <string name="shortcut_add">Neuer Geburtstag</string>
+    <string name="shortcut_search">Person suchen</string>
+    <string name="widget_small_name">Nächste Geburtstage</string>
+    <string name="widget_wide_name">Nächste Geburtstage (breit)</string>
+    <string name="widget_description">Zeigt die nächsten Geburtstage</string>
+    <string name="widget_today">Heute</string>
+    <string name="widget_tomorrow">Morgen</string>
+    <string name="widget_in_days">In %1$d Tagen</string>
+    <string name="widget_empty">Noch keine Einträge</string>
+    <string name="widget_locked">App ist gesperrt</string>
+</resources>
