@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 enum AppIcon {
-  cake,
   balloons,
+  cake,
   calendar,
   cupcake;
+
+  static const AppIcon standard = AppIcon.balloons;
 
   String get asset => 'assets/icon/app_icon_$name.png';
 }
@@ -34,12 +36,13 @@ class HomeIntegration {
   }
 
   // Zuletzt bekanntes Icon, damit Bilder ohne Flackern das richtige zeigen
-  AppIcon currentAppIcon = AppIcon.cake;
+  AppIcon currentAppIcon = AppIcon.standard;
 
   Future<AppIcon> getAppIcon() async {
     if (!Platform.isAndroid) return currentAppIcon;
     final name = await _channel.invokeMethod<String>('getAppIcon');
-    return currentAppIcon = AppIcon.values.asNameMap()[name] ?? AppIcon.cake;
+    return currentAppIcon =
+        AppIcon.values.asNameMap()[name] ?? AppIcon.standard;
   }
 
   Future<void> setAppIcon(AppIcon icon) async {

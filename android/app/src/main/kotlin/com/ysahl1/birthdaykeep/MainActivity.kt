@@ -82,6 +82,10 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
+    private companion object {
+        const val DEFAULT_ICON = "balloons"
+    }
+
     private val appIcons = mapOf(
         "cake" to "IconCake",
         "balloons" to "IconBalloons",
@@ -95,10 +99,10 @@ class MainActivity : FlutterFragmentActivity() {
         for ((icon, alias) in appIcons) {
             val state = packageManager.getComponentEnabledSetting(aliasName(alias))
             val enabled = state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED ||
-                (state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT && icon == "cake")
+                (state == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT && icon == DEFAULT_ICON)
             if (enabled) return icon
         }
-        return "cake"
+        return DEFAULT_ICON
     }
 
     // Erst das neue Icon aktivieren, dann die anderen abschalten, damit die App

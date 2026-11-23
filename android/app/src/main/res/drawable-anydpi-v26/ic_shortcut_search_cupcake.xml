@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Farbiger Kreis in der Farbe des App-Icons mit weißem Symbol -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/shortcut_cupcake"/>
+    <foreground>
+        <inset android:drawable="@drawable/ic_action_search" android:inset="29dp"/>
+    </foreground>
+</adaptive-icon>

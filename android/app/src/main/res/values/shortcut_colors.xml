@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="shortcut_balloons">#3D8BFD</color>
+    <color name="shortcut_cake">#5E17EB</color>
+    <color name="shortcut_calendar">#5E17EB</color>
+    <color name="shortcut_cupcake">#FF8FAB</color>
+</resources>

@@ -6,6 +6,26 @@ import 'package:BirthdayMarker/stretchListView.dart';
 import 'package:BirthdayMarker/feedback.dart';
 import 'package:flutter/material.dart';
 
+// Wer eine aktive Sperre ändert, ausschaltet oder zurücksetzt, muss sie
+// zuerst bestätigen
+Future<bool> confirmCurrentLock(BuildContext context) async {
+  final service = BiometricService();
+  final mode = await service.getLockMode();
+  if (!context.mounted) return false;
+  switch (mode) {
+    case LockMode.off:
+      return true;
+    case LockMode.pin:
+      final verified = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const PinVerifyPage()),
+      );
+      return verified ?? false;
+    case LockMode.device || LockMode.biometric || LockMode.face:
+      return service.authenticate(mode: mode);
+  }
+}
+
 /* =========================
    Bildschirmsperre
 ========================= */
@@ -53,21 +73,7 @@ class _ScreenLockSettingsPageState extends State<ScreenLockSettingsPage> {
     );
   }
 
-  // Wer eine aktive Sperre ändert oder ausschaltet, muss sie zuerst bestätigen
-  Future<bool> _confirmCurrentLock() async {
-    switch (_lockMode) {
-      case LockMode.off:
-        return true;
-      case LockMode.pin:
-        final verified = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(builder: (_) => const PinVerifyPage()),
-        );
-        return verified ?? false;
-      case LockMode.device || LockMode.biometric || LockMode.face:
-        return _biometricService.authenticate(mode: _lockMode);
-    }
-  }
+  Future<bool> _confirmCurrentLock() => confirmCurrentLock(context);
 
   Future<void> _disable() async {
     if (!await _confirmCurrentLock()) return;

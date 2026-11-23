@@ -8,7 +8,7 @@
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_balloons"
         android:allowBackup="false">
         <activity
             android:name=".MainActivity"
@@ -28,7 +28,7 @@
         <activity-alias
             android:name=".IconCake"
             android:targetActivity=".MainActivity"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name">
@@ -36,12 +36,12 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts_cake"/>
         </activity-alias>
         <activity-alias
             android:name=".IconBalloons"
             android:targetActivity=".MainActivity"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_balloons"
             android:label="@string/app_name">
@@ -49,7 +49,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts_balloons"/>
         </activity-alias>
         <activity-alias
             android:name=".IconCalendar"
@@ -62,7 +62,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts_calendar"/>
         </activity-alias>
         <activity-alias
             android:name=".IconCupcake"
@@ -75,7 +75,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts_cupcake"/>
         </activity-alias>
         <!-- Schnelleinstellungen und Widgets -->
         <service android:name=".ListTileService" android:exported="true" android:label="@string/tile_list" android:icon="@drawable/ic_action_list" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">

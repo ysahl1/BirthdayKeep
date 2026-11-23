@@ -42,7 +42,7 @@ class _BirthdayDesignSettingsState extends State<BirthdayDesignSettings> {
     _AccentColor('Brown', Color(0xFF795548)),
   ];
 
-  AppIcon _appIcon = AppIcon.cake;
+  AppIcon _appIcon = AppIcon.standard;
 
   @override
   void initState() {

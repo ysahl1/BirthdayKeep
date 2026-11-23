@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -706,7 +707,7 @@ void main() {
         // Es zeigt das gewählte App-Icon
         final image =
             tester.widget<Image>(find.byType(Image)).image as AssetImage;
-        expect(image.assetName, AppIcon.cake.asset);
+        expect(image.assetName, AppIcon.balloons.asset);
         expect(
           tester.getTopLeft(find.text('Vom gleichen Entwickler')).dy,
           greaterThan(tester.getTopLeft(find.text('Unterstützen')).dy),
@@ -803,6 +804,49 @@ void main() {
     }
     expect(find.byType(Image), findsNWidgets(4));
     expect(find.byIcon(Icons.widgets_outlined), findsOneWidget);
+  });
+
+  testWidgets('Zurücksetzen fragt nach und behält die Geburtstage', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(412, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'birthday_entries',
+      jsonEncode([_entry('Anna', DateTime(1990, 5, 1)).toJson()]),
+    );
+    AppSettings.instance.dateStyle = DateStyle.yearMonthDayDash;
+    AppSettings.instance.amoled = true;
+    AppSettings.instance.saveSound = false;
+    var resetCalls = 0;
+    AppSettings.onReset = () => resetCalls++;
+    addTearDown(() => AppSettings.onReset = null);
+
+    await tester.pumpWidget(_localized(const BirthdayPrivacySettings()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Auf Standardeinstellungen zurücksetzen'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Deine Geburtstage bleiben erhalten'),
+      findsOneWidget,
+    );
+
+    // Abbrechen ändert nichts
+    await tester.tap(find.text('Abbrechen'));
+    await tester.pumpAndSettle();
+    expect(AppSettings.instance.amoled, isTrue);
+
+    await tester.tap(find.text('Auf Standardeinstellungen zurücksetzen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Zurücksetzen'));
+    await tester.pumpAndSettle();
+    expect(resetCalls, 1);
+    expect(AppSettings.instance.amoled, isFalse);
+    expect(AppSettings.instance.saveSound, isTrue);
+    expect(AppSettings.instance.dateStyle, DateStyle.dayMonthYearSlash);
+    expect(prefs.getString('birthday_entries'), contains('Anna'));
   });
 
   group('Wischen und Filter', () {

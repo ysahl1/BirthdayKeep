@@ -14,7 +14,7 @@ class AppIconImage extends StatelessWidget {
       initialData: integration.currentAppIcon,
       builder:
           (_, icon) => Image.asset(
-            (icon.data ?? AppIcon.cake).asset,
+            (icon.data ?? AppIcon.standard).asset,
             width: size,
             height: size,
             fit: BoxFit.cover,

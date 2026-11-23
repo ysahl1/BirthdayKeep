@@ -217,6 +217,17 @@ class AppStrings {
     'Keine neuen Geburtstage in der Datei gefunden',
     'No new birthdays found in the file',
   );
+  String get resetSettings =>
+      _t('Auf Standardeinstellungen zurücksetzen', 'Reset to Default Settings');
+  String get resetSettingsHint =>
+      _t('Wie beim ersten Öffnen der App', 'As when the app was first opened');
+  String get resetSettingsWarning => _t(
+    'Alle Einstellungen werden zurückgesetzt, auch App-Sperre, Design, Sprache und Erinnerungen. Deine Geburtstage bleiben erhalten.',
+    'All settings will be reset, including app lock, design, language and reminders. Your birthdays are kept.',
+  );
+  String get reset => _t('Zurücksetzen', 'Reset');
+  String get settingsReset =>
+      _t('Einstellungen zurückgesetzt', 'Settings reset');
   String get restore => _t('Wiederherstellen', 'Restore');
   String get saved => _t('Datei gespeichert', 'File saved');
   String get saveFailed =>

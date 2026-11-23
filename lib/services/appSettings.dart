@@ -37,6 +37,18 @@ class AppSettings {
 
   static const List<int> leadDayOptions = [0, 1, 3, 7, 14];
 
+  // Wird nach dem Zurücksetzen aufgerufen, damit Design und Sprache sofort gelten
+  static VoidCallback? onReset;
+
+  // Alle Einstellungen wie beim ersten Start. Die Geburtstage bleiben erhalten.
+  static Future<void> resetAll() async {
+    final prefs = instance._prefs;
+    for (final key in prefs.getKeys().toList()) {
+      if (key != 'birthday_entries') await prefs.remove(key);
+    }
+    onReset?.call();
+  }
+
   static Future<void> load() async {
     instance = AppSettings._(await SharedPreferences.getInstance());
   }

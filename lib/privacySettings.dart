@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/screenLockSettings.dart';
 import 'package:BirthdayMarker/services/biometricService.dart';
+import 'package:BirthdayMarker/services/notificationService.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
+import 'package:BirthdayMarker/services/appSettings.dart';
 import 'package:BirthdayMarker/services/birthdayStore.dart';
 import 'package:BirthdayMarker/services/exportService.dart';
 
@@ -111,6 +114,48 @@ class privacySettingsState extends State<BirthdayPrivacySettings> {
       debugPrint('Saving $fileName failed: $e');
       _showMessage(s.saveFailed, type: FeedbackType.error);
     }
+  }
+
+  Future<void> _resetSettings() async {
+    final s = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            icon: Icon(
+              Icons.warning_amber_rounded,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: Text(s.resetSettings),
+            content: Text(s.resetSettingsWarning),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(s.cancel),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(s.reset),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (!await confirmCurrentLock(context)) return;
+
+    await AppSettings.resetAll();
+    await BiometricService().applyScreenProtection();
+    await HomeIntegration.instance.setAppIcon(AppIcon.standard);
+    await NotificationService.instance.reschedule();
+    await HomeIntegration.instance.refreshWidgets();
+    if (!mounted) return;
+    final messengerContext = Navigator.of(context, rootNavigator: true).context;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    showFeedback(messengerContext, s.settingsReset);
   }
 
   Future<void> _importTextFile() async {
@@ -255,6 +300,14 @@ class privacySettingsState extends State<BirthdayPrivacySettings> {
               title: Text(s.importText),
               subtitle: Text(s.importTextHint),
               onTap: _importTextFile,
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.settings_backup_restore_rounded),
+              title: Text(s.resetSettings),
+              subtitle: Text(s.resetSettingsHint),
+              onTap: _resetSettings,
             ),
           ),
         ],

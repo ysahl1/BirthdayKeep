@@ -113,6 +113,12 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
       NotificationService.instance.reschedule();
       HomeIntegration.instance.refreshWidgets();
     });
+    AppSettings.onReset = () {
+      themeNotifier.value = _settings.themeMode;
+      localeNotifier.value = _settings.locale;
+      accentColorNotifier.value = _settings.accentColor;
+      amoledNotifier.value = _settings.amoled;
+    };
     _checkAuthentication();
   }
 
