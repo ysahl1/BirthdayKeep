@@ -4,6 +4,7 @@
 import 'package:BirthdayMarker/birthdayPicker.dart';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/main.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/services/appSettings.dart';
 import 'package:BirthdayMarker/stretchListView.dart';
 import 'package:BirthdayMarker/feedback.dart';
@@ -115,7 +116,11 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
   // Sortierte Liste
   // -------------------
   List<BirthdayEntry> get _sortedEntries {
-    final list = List<BirthdayEntry>.from(widget.entries);
+    final list = List<BirthdayEntry>.from(
+      AppSettings.instance.favoritesOnly
+          ? widget.entries.where((e) => e.favorite)
+          : widget.entries,
+    );
 
     switch (_currentSort) {
       case SortOption.name:
@@ -166,90 +171,106 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
             title: Text(AppStrings.of(context).sort),
             content: StatefulBuilder(
               builder:
-                  (context, setDialogState) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildSortOption(
-                        icon: Icons.check,
-                        label: AppStrings.of(context).name,
-                        isSelected: _currentSort == SortOption.name,
-                        onTap: () {
-                          setDialogState(() {
-                            setState(() {
-                              _currentSort = SortOption.name;
+                  (context, setDialogState) => SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).name,
+                          isSelected: _currentSort == SortOption.name,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                _currentSort = SortOption.name;
+                              });
                             });
-                          });
-                          _saveSortSettings();
-                        },
-                      ),
-                      _buildSortOption(
-                        icon: Icons.check,
-                        label: AppStrings.of(context).sortBirthYear,
-                        isSelected: _currentSort == SortOption.birthdayYear,
-                        onTap: () {
-                          setDialogState(() {
-                            setState(() {
-                              _currentSort = SortOption.birthdayYear;
+                            _saveSortSettings();
+                          },
+                        ),
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).sortBirthYear,
+                          isSelected: _currentSort == SortOption.birthdayYear,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                _currentSort = SortOption.birthdayYear;
+                              });
                             });
-                          });
-                          _saveSortSettings();
-                        },
-                      ),
-                      _buildSortOption(
-                        icon: Icons.check,
-                        label: AppStrings.of(context).sortRecentlyAdded,
-                        isSelected: _currentSort == SortOption.recentlyAdded,
-                        onTap: () {
-                          setDialogState(() {
-                            setState(() {
-                              _currentSort = SortOption.recentlyAdded;
+                            _saveSortSettings();
+                          },
+                        ),
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).sortRecentlyAdded,
+                          isSelected: _currentSort == SortOption.recentlyAdded,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                _currentSort = SortOption.recentlyAdded;
+                              });
                             });
-                          });
-                          _saveSortSettings();
-                        },
-                      ),
-                      _buildSortOption(
-                        icon: Icons.check,
-                        label: AppStrings.of(context).sortFromToday,
-                        isSelected:
-                            _currentSort == SortOption.upcomingFromToday,
-                        onTap: () {
-                          setDialogState(() {
-                            setState(() {
-                              _currentSort = SortOption.upcomingFromToday;
+                            _saveSortSettings();
+                          },
+                        ),
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).sortFromToday,
+                          isSelected:
+                              _currentSort == SortOption.upcomingFromToday,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                _currentSort = SortOption.upcomingFromToday;
+                              });
                             });
-                          });
-                          _saveSortSettings();
-                        },
-                      ),
-                      const Divider(height: 32),
-                      _buildSortOption(
-                        icon: Icons.check,
-                        label: AppStrings.of(context).ascending,
-                        isSelected: _isAscending,
-                        onTap: () {
-                          setDialogState(() {
-                            setState(() {
-                              _isAscending = true;
+                            _saveSortSettings();
+                          },
+                        ),
+                        const Divider(height: 32),
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).favoritesOnly,
+                          isSelected: AppSettings.instance.favoritesOnly,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                AppSettings.instance.favoritesOnly =
+                                    !AppSettings.instance.favoritesOnly;
+                              });
                             });
-                          });
-                          _saveSortSettings();
-                        },
-                      ),
-                      _buildSortOption(
-                        icon: Icons.check,
-                        label: AppStrings.of(context).descending,
-                        isSelected: !_isAscending,
-                        onTap: () {
-                          setDialogState(() {
-                            setState(() {
-                              _isAscending = false;
+                          },
+                        ),
+                        const Divider(height: 32),
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).ascending,
+                          isSelected: _isAscending,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                _isAscending = true;
+                              });
                             });
-                          });
-                          _saveSortSettings();
-                        },
-                      ),
-                    ],
+                            _saveSortSettings();
+                          },
+                        ),
+                        _buildSortOption(
+                          icon: Icons.check,
+                          label: AppStrings.of(context).descending,
+                          isSelected: !_isAscending,
+                          onTap: () {
+                            setDialogState(() {
+                              setState(() {
+                                _isAscending = false;
+                              });
+                            });
+                            _saveSortSettings();
+                          },
+                        ),
+                      ],
+                    ),
                   ),
             ),
             actions: [
@@ -388,6 +409,7 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                         entry.yearKnown = yearKnown;
                         entry.notificationTime = time;
                         _notifyUpdate();
+                        HomeIntegration.instance.playSaveSound();
                         Navigator.pop(context);
                       },
                       child: Text(AppStrings.of(context).save),
@@ -491,6 +513,36 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
     );
   }
 
+  void _toggleFavorite(BirthdayEntry e, AppStrings s) {
+    e.favorite = !e.favorite;
+    _notifyUpdate();
+    showFeedback(
+      context,
+      e.favorite ? s.favoriteAdded(e.name) : s.favoriteRemoved(e.name),
+      type: FeedbackType.info,
+      icon: e.favorite ? Icons.star_rounded : Icons.star_outline_rounded,
+    );
+  }
+
+  Widget _swipeBackground(
+    BuildContext context,
+    IconData icon,
+    Alignment alignment,
+    Color background,
+    Color foreground,
+  ) {
+    return Container(
+      margin: const EdgeInsets.all(4),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      alignment: alignment,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Icon(icon, color: foreground),
+    );
+  }
+
   Widget _monthHeader(BuildContext context, AppStrings s, int month) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
@@ -549,7 +601,14 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
         },
         child:
             sortedEntries.isEmpty
-                ? Center(child: Text(s.noEntries))
+                ? Center(
+                  child: Text(
+                    AppSettings.instance.favoritesOnly &&
+                            widget.entries.isNotEmpty
+                        ? s.noFavorites
+                        : s.noEntries,
+                  ),
+                )
                 : StretchListView.builder(
                   // Unten Platz lassen, damit der Such-Knopf keine Karte verdeckt
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
@@ -561,36 +620,62 @@ class _BirthdayListPageState extends State<BirthdayListPage> {
                     final d = widget.daysUntil(e.birthday);
                     final age = widget.nextAge(e.birthday);
 
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    return Dismissible(
+                      key: ObjectKey(e),
+                      background: _swipeBackground(
+                        context,
+                        Icons.star_rounded,
+                        Alignment.centerLeft,
+                        Theme.of(context).colorScheme.primaryContainer,
+                        Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
-                      child: ListTile(
-                        title: Text(e.name),
-                        subtitle: Text(
-                          e.yearKnown
-                              ? (d == 0
-                                  ? s.todayTurns(age)
-                                  : s.inDaysTurns(d, age))
-                              : (d == 0 ? s.today : s.inDays(d)),
+                      secondaryBackground: _swipeBackground(
+                        context,
+                        Icons.delete_outline_rounded,
+                        Alignment.centerRight,
+                        Theme.of(context).colorScheme.errorContainer,
+                        Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                      // Nach rechts: Favorit umschalten, die Karte bleibt stehen
+                      confirmDismiss: (direction) async {
+                        if (direction == DismissDirection.endToStart) {
+                          return true;
+                        }
+                        _toggleFavorite(e, s);
+                        return false;
+                      },
+                      onDismissed: (_) => _deleteEntry(e, s),
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        trailing: IconButton(
-                          tooltip: s.favorite,
-                          icon: Icon(
-                            e.favorite
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            color:
-                                e.favorite
-                                    ? Theme.of(context).colorScheme.primary
-                                    : null,
+                        child: ListTile(
+                          title: Text(e.name),
+                          subtitle: Text(
+                            e.yearKnown
+                                ? (d == 0
+                                    ? s.todayTurns(age)
+                                    : s.inDaysTurns(d, age))
+                                : (d == 0 ? s.today : s.inDays(d)),
                           ),
-                          onPressed: () {
-                            e.favorite = !e.favorite;
-                            _notifyUpdate();
-                          },
+                          trailing: IconButton(
+                            tooltip: s.favorite,
+                            icon: Icon(
+                              e.favorite
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              color:
+                                  e.favorite
+                                      ? Theme.of(context).colorScheme.primary
+                                      : null,
+                            ),
+                            onPressed: () {
+                              e.favorite = !e.favorite;
+                              _notifyUpdate();
+                            },
+                          ),
+                          onTap: () => _showDetails(context, e),
                         ),
-                        onTap: () => _showDetails(context, e),
                       ),
                     );
                   },

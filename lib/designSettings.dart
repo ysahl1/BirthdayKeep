@@ -1,5 +1,7 @@
 import 'package:BirthdayMarker/l10n/appStrings.dart';
+import 'package:BirthdayMarker/feedback.dart';
 import 'package:BirthdayMarker/services/appSettings.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/stretchListView.dart';
 import 'package:flutter/material.dart';
 
@@ -40,6 +42,89 @@ class _BirthdayDesignSettingsState extends State<BirthdayDesignSettings> {
     _AccentColor('Brown', Color(0xFF795548)),
   ];
 
+  AppIcon _appIcon = AppIcon.cake;
+
+  @override
+  void initState() {
+    super.initState();
+    HomeIntegration.instance.getAppIcon().then((icon) {
+      if (mounted) setState(() => _appIcon = icon);
+    });
+  }
+
+  void _showAppIconDialog(BuildContext context) {
+    final s = AppStrings.of(context);
+    final colors = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: Text(s.chooseAppIcon),
+            content: SizedBox(
+              width: 280,
+              child: GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.85,
+                children: [
+                  for (final icon in AppIcon.values)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () async {
+                        Navigator.pop(dialogContext);
+                        if (icon == _appIcon) return;
+                        await HomeIntegration.instance.setAppIcon(icon);
+                        if (!mounted) return;
+                        setState(() => _appIcon = icon);
+                        showFeedback(this.context, s.appIconChanged);
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                width: 3,
+                                color:
+                                    icon == _appIcon
+                                        ? colors.primary
+                                        : Colors.transparent,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                icon.asset,
+                                width: 72,
+                                height: 72,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            s.appIconName(icon),
+                            style: TextStyle(
+                              fontWeight:
+                                  icon == _appIcon
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
@@ -48,6 +133,19 @@ class _BirthdayDesignSettingsState extends State<BirthdayDesignSettings> {
       body: StretchListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // App Icon Card
+          Card(
+            child: ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(_appIcon.asset, width: 28, height: 28),
+              ),
+              title: Text(s.appIcon),
+              subtitle: Text(s.appIconName(_appIcon)),
+              onTap: () => _showAppIconDialog(context),
+            ),
+          ),
+
           // Appearance Card
           Card(
             child: ListTile(
@@ -103,6 +201,19 @@ class _BirthdayDesignSettingsState extends State<BirthdayDesignSettings> {
                   onTap: () => _showAmoledDialog(context),
                 );
               },
+            ),
+          ),
+
+          // Save Sound Card
+          Card(
+            child: SwitchListTile(
+              secondary: const Icon(Icons.music_note_outlined),
+              title: Text(s.saveSound),
+              subtitle: Text(s.saveSoundHint),
+              value: AppSettings.instance.saveSound,
+              onChanged:
+                  (value) =>
+                      setState(() => AppSettings.instance.saveSound = value),
             ),
           ),
 

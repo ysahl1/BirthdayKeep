@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:BirthdayMarker/aboutBirthdayMarkerPage.dart';
 import 'package:BirthdayMarker/birthdayPicker.dart';
 import 'package:BirthdayMarker/calendarWidget.dart';
+import 'package:BirthdayMarker/designSettings.dart';
 import 'package:BirthdayMarker/homePage.dart';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/list.dart';
@@ -766,6 +767,91 @@ void main() {
       expect(entry.favorite, isTrue);
       expect(updates, 1);
       expect(find.byIcon(Icons.star_rounded), findsOneWidget);
+    });
+  });
+
+  testWidgets('Design: App-Icon als erste Kachel mit Auswahl aus vier', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(412, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      _localized(
+        BirthdayDesignSettings(
+          themeNotifier: ValueNotifier(ThemeMode.light),
+          localeNotifier: ValueNotifier(const Locale('de')),
+          accentColorNotifier: ValueNotifier(Colors.blue),
+          amoledNotifier: ValueNotifier(false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(find.text('App-Icon')).dy,
+      lessThan(tester.getTopLeft(find.text('Erscheinungsbild')).dy),
+    );
+    await tester.tap(find.text('App-Icon'));
+    await tester.pumpAndSettle();
+    for (final name in ['Torte', 'Ballons', 'Kalender', 'Cupcake']) {
+      expect(find.text(name), findsWidgets);
+    }
+    expect(find.byType(Image), findsNWidgets(5));
+  });
+
+  group('Wischen und Filter', () {
+    Widget list(List<BirthdayEntry> entries) => _localized(
+      BirthdayListPage(
+        entries: entries,
+        nextAge: (_) => 30,
+        daysUntil: (b) => b.month * 10,
+        onUpdate: () {},
+        onOpenCalendar: () {},
+      ),
+    );
+
+    testWidgets('nach links löschen, mit Rückgängig', (tester) async {
+      final entries = [
+        _entry('Anna', DateTime(1990, 2, 1)),
+        _entry('Ben', DateTime(1990, 3, 1)),
+      ];
+      await tester.pumpWidget(list(entries));
+      await tester.pumpAndSettle();
+      await tester.drag(find.text('Anna'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+      expect(entries.map((e) => e.name), ['Ben']);
+      await tester.tap(find.text('Rückgängig'));
+      await tester.pumpAndSettle();
+      expect(entries.map((e) => e.name), ['Anna', 'Ben']);
+    });
+
+    testWidgets('nach rechts wird Favorit, Karte bleibt', (tester) async {
+      final entries = [_entry('Anna', DateTime(1990, 2, 1))];
+      await tester.pumpWidget(list(entries));
+      await tester.pumpAndSettle();
+      await tester.drag(find.text('Anna'), const Offset(600, 0));
+      await tester.pumpAndSettle();
+      expect(entries.single.favorite, isTrue);
+      expect(find.text('Anna'), findsOneWidget);
+      expect(find.text('Anna ist jetzt Favorit'), findsOneWidget);
+    });
+
+    testWidgets('Filter zeigt nur Favoriten', (tester) async {
+      final entries = [
+        _entry('Anna', DateTime(1990, 2, 1))..favorite = true,
+        _entry('Ben', DateTime(1990, 3, 1)),
+      ];
+      await tester.pumpWidget(list(entries));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nur Favoriten'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Schließen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Anna'), findsOneWidget);
+      expect(find.text('Ben'), findsNothing);
+      expect(AppSettings.instance.favoritesOnly, isTrue);
     });
   });
 

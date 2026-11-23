@@ -66,6 +66,12 @@ class AppSettings {
   bool get amoled => _prefs.getBool('amoled') ?? false;
   set amoled(bool enabled) => _prefs.setBool('amoled', enabled);
 
+  bool get saveSound => _prefs.getBool('saveSound') ?? true;
+  set saveSound(bool enabled) => _prefs.setBool('saveSound', enabled);
+
+  bool get favoritesOnly => _prefs.getBool('favoritesOnly') ?? false;
+  set favoritesOnly(bool enabled) => _prefs.setBool('favoritesOnly', enabled);
+
   bool get pinScramble => _prefs.getBool('pinScramble') ?? false;
   set pinScramble(bool enabled) => _prefs.setBool('pinScramble', enabled);
 

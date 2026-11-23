@@ -1,3 +1,4 @@
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:flutter/material.dart';
 
 /* =========================
@@ -51,6 +52,17 @@ class AppStrings {
       days == 1
           ? _t('Morgen ($age)', 'Tomorrow ($age)')
           : _t('In $days Tagen ($age)', 'In $days days ($age)');
+  String get favoritesOnly => _t('Nur Favoriten', 'Favorites only');
+  String get noFavorites => _t('Noch keine Favoriten', 'No favorites yet');
+  String get saveSound => _t('Ton beim Speichern', 'Sound When Saving');
+  String get saveSoundHint => _t(
+    'Leiser Ton, wenn ein Geburtstag gespeichert wird',
+    'Soft sound when a birthday is saved',
+  );
+  String favoriteAdded(String name) =>
+      _t('$name ist jetzt Favorit', '$name is now a favorite');
+  String favoriteRemoved(String name) =>
+      _t('$name ist kein Favorit mehr', '$name is no longer a favorite');
   String get favorite => _t('Favorit', 'Favorite');
   String get today => _t('Heute', 'Today');
   String inDays(int days) =>
@@ -296,6 +308,18 @@ class AppStrings {
   }
 
   // Design
+  String get appIcon => _t('App-Icon', 'App Icon');
+  String get chooseAppIcon => _t('App-Icon wählen', 'Choose App Icon');
+  String get appIconChanged => _t(
+    'App-Icon geändert. Der Startbildschirm kann einen Moment brauchen.',
+    'App icon changed. The home screen may take a moment.',
+  );
+  String appIconName(AppIcon icon) => switch (icon) {
+    AppIcon.cake => _t('Torte', 'Cake'),
+    AppIcon.balloons => _t('Ballons', 'Balloons'),
+    AppIcon.calendar => _t('Kalender', 'Calendar'),
+    AppIcon.cupcake => 'Cupcake',
+  };
   String get appearance => _t('Erscheinungsbild', 'Appearance');
   String get chooseAppearance =>
       _t('Erscheinungsbild wählen', 'Choose Appearance');

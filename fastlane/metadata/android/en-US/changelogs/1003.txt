@@ -1,0 +1,1 @@
+Choose between four app icons, favorites filter, swipe left to delete and right to mark a favorite, and a soft sound when saving a birthday (can be turned off in Design).

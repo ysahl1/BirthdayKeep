@@ -255,6 +255,7 @@ class _BirthdayHomePageState extends State<BirthdayHomePage> {
                         ),
                       );
                       _store.save();
+                      HomeIntegration.instance.playSaveSound();
                       Navigator.pop(dialogContext);
                       showFeedback(context, s.entrySaved(nameCtrl.text));
                     },

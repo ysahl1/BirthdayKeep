@@ -1,0 +1,1 @@
+Vier App-Icons zur Auswahl, Favoriten-Filter, nach links wischen zum Löschen und nach rechts für Favoriten, dazu ein leiser Ton beim Speichern (abschaltbar unter Design).
