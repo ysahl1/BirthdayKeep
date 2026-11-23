@@ -161,6 +161,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             ),
           ),
           Card(
+            child: SwitchListTile(
+              secondary: const Icon(Icons.music_note_outlined),
+              title: Text(s.saveSound),
+              subtitle: Text(s.saveSoundHint),
+              value: _settings.saveSound,
+              onChanged: (value) => setState(() => _settings.saveSound = value),
+            ),
+          ),
+          Card(
             child: ListTile(
               leading: const Icon(Icons.date_range),
               title: Text(s.leadTime),

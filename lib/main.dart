@@ -16,6 +16,7 @@ Future<void> main() async {
   await BirthdayStore.instance.load();
   await NotificationService.instance.init();
   await BiometricService().applyScreenProtection();
+  await HomeIntegration.instance.getAppIcon();
   runApp(BirthdayMarkerApp());
   NotificationService.instance.reschedule();
   HomeIntegration.instance.refreshWidgets();

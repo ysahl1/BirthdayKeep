@@ -33,13 +33,17 @@ class HomeIntegration {
     return _channel.invokeMethod<String>('takePendingAction');
   }
 
+  // Zuletzt bekanntes Icon, damit Bilder ohne Flackern das richtige zeigen
+  AppIcon currentAppIcon = AppIcon.cake;
+
   Future<AppIcon> getAppIcon() async {
-    if (!Platform.isAndroid) return AppIcon.cake;
+    if (!Platform.isAndroid) return currentAppIcon;
     final name = await _channel.invokeMethod<String>('getAppIcon');
-    return AppIcon.values.asNameMap()[name] ?? AppIcon.cake;
+    return currentAppIcon = AppIcon.values.asNameMap()[name] ?? AppIcon.cake;
   }
 
   Future<void> setAppIcon(AppIcon icon) async {
+    currentAppIcon = icon;
     if (!Platform.isAndroid) return;
     await _channel.invokeMethod<void>('setAppIcon', icon.name);
   }

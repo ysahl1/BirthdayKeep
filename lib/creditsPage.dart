@@ -1,6 +1,7 @@
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/services/externalLinks.dart';
 import 'package:BirthdayMarker/stretchListView.dart';
+import 'package:BirthdayMarker/appIconImage.dart';
 import 'package:flutter/material.dart';
 
 class _Credit {
@@ -93,11 +94,7 @@ class CreditsPage extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/icon/BDMIcon.png',
-                      width: 96,
-                      height: 96,
-                    ),
+                    child: const AppIconImage(size: 96),
                   ),
                   const SizedBox(height: 16),
                   Text(

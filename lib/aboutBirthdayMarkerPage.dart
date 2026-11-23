@@ -2,6 +2,7 @@ import 'package:BirthdayMarker/creditsPage.dart';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
 import 'package:BirthdayMarker/services/externalLinks.dart';
 import 'package:BirthdayMarker/stretchListView.dart';
+import 'package:BirthdayMarker/appIconImage.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -131,26 +132,7 @@ class aboutBirthdayMarkerPage extends StatelessWidget {
             child: Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  'assets/icon/BDMIcon.png',
-                  width: 72,
-                  height: 72,
-                  fit: BoxFit.cover,
-                  errorBuilder:
-                      (context, error, stackTrace) => Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Icon(
-                          Icons.cake,
-                          size: 36,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                ),
+                child: const AppIconImage(size: 72),
               ),
             ),
           ),

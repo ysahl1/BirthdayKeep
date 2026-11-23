@@ -17,6 +17,7 @@ import 'package:BirthdayMarker/screens/authLockScreen.dart';
 import 'package:BirthdayMarker/screens/pinPad.dart';
 import 'package:BirthdayMarker/services/biometricService.dart';
 import 'package:BirthdayMarker/services/birthdayStore.dart';
+import 'package:BirthdayMarker/services/homeIntegration.dart';
 import 'package:BirthdayMarker/services/exportService.dart';
 import 'package:BirthdayMarker/services/notificationService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -702,6 +703,10 @@ void main() {
         await tester.scrollUntilVisible(find.text('Erstellt von ysahl1'), 200);
         // Das Icon behält seine Größe und wird nicht auf die Breite gezogen
         expect(tester.getSize(find.byType(Image)).width, 72);
+        // Es zeigt das gewählte App-Icon
+        final image =
+            tester.widget<Image>(find.byType(Image)).image as AssetImage;
+        expect(image.assetName, AppIcon.cake.asset);
         expect(
           tester.getTopLeft(find.text('Vom gleichen Entwickler')).dy,
           greaterThan(tester.getTopLeft(find.text('Unterstützen')).dy),
@@ -796,7 +801,8 @@ void main() {
     for (final name in ['Torte', 'Ballons', 'Kalender', 'Cupcake']) {
       expect(find.text(name), findsWidgets);
     }
-    expect(find.byType(Image), findsNWidgets(5));
+    expect(find.byType(Image), findsNWidgets(4));
+    expect(find.byIcon(Icons.widgets_outlined), findsOneWidget);
   });
 
   group('Wischen und Filter', () {
@@ -1215,6 +1221,15 @@ void main() {
       expect(find.text('12:00'), findsOneWidget);
       expect(find.text('Vorlauf'), findsOneWidget);
       expect(find.textContaining('Test'), findsNothing);
+      // Ton beim Speichern steht zwischen Automatik und Vorlauf
+      final soundY = tester.getTopLeft(find.text('Ton beim Speichern')).dy;
+      expect(
+        soundY,
+        greaterThan(
+          tester.getTopLeft(find.text('Automatische Benachrichtigung')).dy,
+        ),
+      );
+      expect(soundY, lessThan(tester.getTopLeft(find.text('Vorlauf')).dy));
 
       await tester.tap(find.text('Datumsformat'));
       await tester.pumpAndSettle();

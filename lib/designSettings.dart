@@ -136,10 +136,7 @@ class _BirthdayDesignSettingsState extends State<BirthdayDesignSettings> {
           // App Icon Card
           Card(
             child: ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(_appIcon.asset, width: 28, height: 28),
-              ),
+              leading: const Icon(Icons.widgets_outlined),
               title: Text(s.appIcon),
               subtitle: Text(s.appIconName(_appIcon)),
               onTap: () => _showAppIconDialog(context),
@@ -201,19 +198,6 @@ class _BirthdayDesignSettingsState extends State<BirthdayDesignSettings> {
                   onTap: () => _showAmoledDialog(context),
                 );
               },
-            ),
-          ),
-
-          // Save Sound Card
-          Card(
-            child: SwitchListTile(
-              secondary: const Icon(Icons.music_note_outlined),
-              title: Text(s.saveSound),
-              subtitle: Text(s.saveSoundHint),
-              value: AppSettings.instance.saveSound,
-              onChanged:
-                  (value) =>
-                      setState(() => AppSettings.instance.saveSound = value),
             ),
           ),
 
