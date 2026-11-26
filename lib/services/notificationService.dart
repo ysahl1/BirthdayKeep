@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:BirthdayMarker/l10n/appStrings.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PlannedReminder {
   final BirthdayEntry entry;
@@ -31,13 +33,26 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   bool _ready = false;
   Future<void> _pending = Future.value();
+  Future<void>? _initFuture;
 
-  Future<void> init() async {
+  static const String _planSignatureKey = 'notificationPlanSignature';
+
+  Future<void>? _timeZoneFuture;
+
+  // Wird beim ersten Bedarf eingerichtet, nicht beim Start der App
+  Future<void> init() => _initFuture ??= _init();
+
+  // Die Zeitzonen-Datenbank braucht nur die Planung. Sie wird erst dann
+  // geladen, weil das sonst das Öffnen der App verzögert.
+  Future<void> _initTimeZone() =>
+      _timeZoneFuture ??= () async {
+        tzdata.initializeTimeZones();
+        final timeZone = await FlutterTimezone.getLocalTimezone();
+        tz.setLocalLocation(tz.getLocation(timeZone.identifier));
+      }();
+
+  Future<void> _init() async {
     try {
-      tzdata.initializeTimeZones();
-      final timeZone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZone.identifier));
-
       const darwin = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
@@ -61,6 +76,7 @@ class NotificationService {
   // Berechtigung
   // -------------------
   Future<bool> requestPermission() async {
+    await init();
     if (!_ready) return false;
     final android =
         _plugin
@@ -84,6 +100,7 @@ class NotificationService {
   }
 
   Future<bool> hasPermission() async {
+    await init();
     if (!_ready) return false;
     final android =
         _plugin
@@ -146,7 +163,50 @@ class NotificationService {
 
   // Aufrufe laufen nacheinander, damit sich zwei Planungen nicht überlagern
   Future<void> reschedule() {
-    return _pending = _pending.then((_) => _reschedule());
+    return _pending = _pending.then((_) async {
+      await init();
+      try {
+        await _initTimeZone();
+      } catch (e) {
+        debugPrint('Time zone setup failed: $e');
+        return;
+      }
+      await _reschedule();
+    });
+  }
+
+  // Beim Start nur neu planen, wenn sich seit der letzten Planung etwas
+  // geändert hat oder ein neuer Tag begonnen hat
+  Future<void> rescheduleIfNeeded() async {
+    await init();
+    if (!_ready) return;
+    try {
+      await _initTimeZone();
+    } catch (e) {
+      debugPrint('Time zone setup failed: $e');
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString(_planSignatureKey) == _planSignature()) return;
+    await reschedule();
+  }
+
+  String _planSignature() {
+    final settings = AppSettings.instance;
+    final today = DateUtils.dateOnly(DateTime.now()).toIso8601String();
+    return jsonEncode([
+      today,
+      tz.local.name,
+      settings.notificationsEnabled,
+      settings.leadDays,
+      settings.locale.languageCode,
+      BirthdayStore.instance.entries.map((e) => e.toJson()).toList(),
+    ]);
+  }
+
+  Future<void> _rememberPlan() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_planSignatureKey, _planSignature());
   }
 
   Future<void> _reschedule() async {
@@ -154,7 +214,10 @@ class NotificationService {
     try {
       await _plugin.cancelAll();
       final settings = AppSettings.instance;
-      if (!settings.notificationsEnabled) return;
+      if (!settings.notificationsEnabled) {
+        await _rememberPlan();
+        return;
+      }
 
       final strings = AppStrings.forLocale(settings.locale);
       final details = _details(strings);
@@ -180,6 +243,7 @@ class NotificationService {
           matchDateTimeComponents: DateTimeComponents.dateAndTime,
         );
       }
+      await _rememberPlan();
     } catch (e) {
       debugPrint('Scheduling notifications failed: $e');
     }

@@ -14,12 +14,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.load();
   await BirthdayStore.instance.load();
-  await NotificationService.instance.init();
+  final lockMode = await BiometricService().getLockMode();
+  runApp(BirthdayMarkerApp(locked: lockMode != LockMode.off));
+
+  // Alles Weitere erst nach dem ersten Bild, damit die App sofort erscheint
+  await WidgetsBinding.instance.endOfFrame;
   await BiometricService().applyScreenProtection();
   await HomeIntegration.instance.getAppIcon();
-  runApp(BirthdayMarkerApp());
-  NotificationService.instance.reschedule();
-  HomeIntegration.instance.refreshWidgets();
+  await Future.delayed(const Duration(milliseconds: 400));
+  await NotificationService.instance.rescheduleIfNeeded();
+  await HomeIntegration.instance.refreshWidgets();
 }
 
 class BirthdayEntry {
@@ -73,7 +77,10 @@ class BirthdayEntry {
 }
 
 class BirthdayMarkerApp extends StatefulWidget {
-  BirthdayMarkerApp({super.key});
+  // Ob beim Start die App-Sperre gezeigt wird
+  final bool locked;
+
+  BirthdayMarkerApp({super.key, this.locked = false});
 
   @override
   State<BirthdayMarkerApp> createState() => _BirthdayMarkerAppState();
@@ -94,10 +101,7 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
     _settings.amoled,
   );
 
-  final BiometricService _biometricService = BiometricService();
-
-  bool _isAuthenticated = false;
-  bool _isCheckingAuth = true;
+  late bool _isAuthenticated = !widget.locked;
 
   @override
   void initState() {
@@ -119,15 +123,6 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
       accentColorNotifier.value = _settings.accentColor;
       amoledNotifier.value = _settings.amoled;
     };
-    _checkAuthentication();
-  }
-
-  Future<void> _checkAuthentication() async {
-    final lockMode = await _biometricService.getLockMode();
-    setState(() {
-      _isAuthenticated = lockMode == LockMode.off;
-      _isCheckingAuth = false;
-    });
   }
 
   void _onAuthenticated() {
@@ -178,12 +173,6 @@ class _BirthdayMarkerAppState extends State<BirthdayMarkerApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isCheckingAuth) {
-      return const MaterialApp(
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
-      );
-    }
-
     if (!_isAuthenticated) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,

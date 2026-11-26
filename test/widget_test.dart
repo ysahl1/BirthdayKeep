@@ -895,7 +895,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.filter_list));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Nur Favoriten'));
+      await tester.tap(find.text('Favoriten'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Schließen'));
       await tester.pumpAndSettle();

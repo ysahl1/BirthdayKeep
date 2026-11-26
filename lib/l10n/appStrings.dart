@@ -52,7 +52,7 @@ class AppStrings {
       days == 1
           ? _t('Morgen ($age)', 'Tomorrow ($age)')
           : _t('In $days Tagen ($age)', 'In $days days ($age)');
-  String get favoritesOnly => _t('Nur Favoriten', 'Favorites only');
+  String get favoritesOnly => _t('Favoriten', 'Favorites');
   String get noFavorites => _t('Noch keine Favoriten', 'No favorites yet');
   String get saveSound => _t('Ton beim Speichern', 'Sound When Saving');
   String get saveSoundHint => _t(
